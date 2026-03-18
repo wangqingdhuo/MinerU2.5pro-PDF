@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>PaddleDev</title>
+  <link rel="stylesheet" href="./style.css">
+</head>
+<body>
+  <div class="app">
+    <div class="left">
+      <div class="title">PaddleDev</div>
+      <div class="field">
+        <div class="label">文件路径</div>
+        <input id="path" type="text" placeholder="输入 PDF 或图片的本地路径">
+      </div>
+      <div class="field">
+        <div class="label">选择文件</div>
+        <div class="fileRow">
+          <input id="file" type="file" accept=".pdf,.png,.jpg,.jpeg,.bmp,.tif,.tiff,.webp" style="display:none;">
+          <button id="browse" type="button">浏览…</button>
+          <div class="fileName" id="fileName">未选择</div>
+          <button id="clearFile" type="button" disabled>清除</button>
+        </div>
+      </div>
+      <div class="actions">
+        <button id="run">识别</button>
+        <button id="copy" disabled>复制</button>
+        <button id="preview" type="button" disabled>预览</button>
+        <button id="history" type="button">历史记录</button>
+      </div>
+      <div class="status" id="status">idle</div>
+      <div class="log" id="log"></div>
+      <div class="step2">
+        <div class="label">第二步 分割文本</div>
+        <div class="step2Row">
+          <select id="subject">
+            <option value="">请选择学科</option>
+            <option value="语文">语文</option>
+            <option value="数学">数学</option>
+            <option value="英语">英语</option>
+            <option value="物理">物理</option>
+            <option value="历史">历史</option>
+            <option value="生物">生物</option>
+            <option value="地理">地理</option>
+            <option value="化学">化学</option>
+            <option value="政治">政治</option>
+            <option value="俄语">俄语</option>
+            <option value="西语">西语</option>
+            <option value="西班牙">西班牙</option>
+            <option value="德语">德语</option>
+            <option value="法语">法语</option>
+            <option value="日语">日语</option>
+          </select>
+          <button id="split" type="button" disabled>分割文本</button>
+        </div>
+      </div>
+    </div>
+    <div class="right">
+      <div class="rightTitle">
+        <div id="titleLabel">识别结果</div>
+        <div class="meta" id="meta"></div>
+      </div>
+      <textarea id="output" spellcheck="false" placeholder="识别内容会显示在这里"></textarea>
+    </div>
+  </div>
+  <div id="historyModal" class="modal" style="display:none;">
+    <div class="modalCard">
+      <div class="modalHeader">
+        <div>历史记录</div>
+        <button id="historyClose" type="button">关闭</button>
+      </div>
+      <div class="modalBody">
+        <div id="historyList" class="historyList"></div>
+      </div>
+    </div>
+  </div>
+  <script src="./app.js"></script>
+</body>
+</html>

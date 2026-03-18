@@ -1,0 +1,32 @@
+html,body{height:100%}
+body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial;color:#111;background:#fff;overflow:hidden}
+.app{display:grid;grid-template-columns:360px 1fr;height:100vh;overflow:hidden}
+.left{border-right:1px solid #e5e5e5;padding:16px;display:flex;flex-direction:column;gap:12px;min-height:0}
+.title{font-size:18px;font-weight:600}
+.field{display:flex;flex-direction:column;gap:6px}
+.label{font-size:12px;color:#555}
+input[type="text"]{padding:8px 10px;border:1px solid #d0d0d0;border-radius:8px;font-size:13px}
+.fileRow{display:flex;align-items:center;gap:8px}
+.fileName{flex:1;min-width:0;font-size:12px;color:#555;padding:8px 10px;border:1px dashed #d0d0d0;border-radius:8px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.actions{display:flex;gap:10px}
+button{padding:8px 12px;border:1px solid #cfcfcf;border-radius:8px;background:#f7f7f7;cursor:pointer}
+button:disabled{opacity:.6;cursor:not-allowed}
+.status{font-size:12px;color:#555}
+.log{flex:0 0 auto;height:30vh;min-height:120px;max-height:240px;white-space:pre-wrap;background:#fafafa;border:1px solid #ececec;border-radius:8px;padding:10px;overflow:auto;font-size:12px}
+.step2{display:flex;flex-direction:column;gap:6px}
+.step2Row{display:flex;gap:8px;align-items:center}
+select{flex:1;min-width:0;padding:8px 10px;border:1px solid #d0d0d0;border-radius:8px;background:#fff;font-size:13px}
+.right{padding:16px;display:flex;flex-direction:column;gap:10px;min-height:0}
+.rightTitle{display:flex;align-items:center;justify-content:space-between}
+.meta{font-size:12px;color:#555}
+textarea{flex:1;width:100%;resize:none;border:1px solid #d0d0d0;border-radius:10px;padding:12px;font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace;font-size:12.5px;line-height:1.45}
+.modal{position:fixed;inset:0;background:rgba(0,0,0,.35);display:flex;align-items:center;justify-content:center;padding:16px;z-index:999}
+.modalCard{width:min(900px,100%);max-height:min(80vh,720px);background:#fff;border-radius:12px;border:1px solid #e5e5e5;box-shadow:0 10px 30px rgba(0,0,0,.2);display:flex;flex-direction:column;overflow:hidden}
+.modalHeader{display:flex;align-items:center;justify-content:space-between;padding:12px 14px;border-bottom:1px solid #eee;font-size:13px;color:#333}
+.modalBody{padding:12px;overflow:auto}
+.historyList{display:flex;flex-direction:column;gap:8px}
+.historyItem{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 12px;border:1px solid #e5e5e5;border-radius:10px;background:#fafafa;cursor:pointer}
+.historyItem:hover{background:#f2f2f2}
+.historyMain{display:flex;flex-direction:column;gap:2px;min-width:0}
+.historyTitle{font-size:13px;color:#111;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.historySub{font-size:12px;color:#666;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}

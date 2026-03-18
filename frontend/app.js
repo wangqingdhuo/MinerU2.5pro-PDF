@@ -16,6 +16,11 @@ const setStatus = (s) => ($("#status").textContent = s);
 let katexLoadPromise = null;
 let currentOutputDir = null;
 let currentContentType = "ocr";
+const runGuard = {
+  running: false,
+  ocrDone: false,
+  splitDone: false,
+};
 
 function loadCss(href) {
   return new Promise((resolve, reject) => {
@@ -399,6 +404,8 @@ async function pollResult(jobId) {
       $("#output").value = res.text || "";
       currentOutputDir = res.outputDir || null;
       currentContentType = "ocr";
+      runGuard.running = false;
+      runGuard.ocrDone = true;
       const tl = $("#titleLabel");
       if (tl) tl.textContent = "识别结果";
       const elapsed = Math.round((Date.now() - startedAt) / 1000);
@@ -535,6 +542,17 @@ async function runOcrFile(file) {
 $("#run").addEventListener("click", async () => {
   const path = $("#path").value.trim();
   try {
+    if (runGuard.running) {
+      alert("正在识别，请等待完成后再开始下一个文件");
+      return;
+    }
+    if (runGuard.ocrDone && !runGuard.splitDone) {
+      alert("上一个文件分割未完成，完成分割后才能识别第二个文件");
+      return;
+    }
+    runGuard.running = true;
+    runGuard.ocrDone = false;
+    runGuard.splitDone = false;
     $("#split").disabled = true;
     if (selectedFile) {
       await runOcrFile(selectedFile);
@@ -546,6 +564,7 @@ $("#run").addEventListener("click", async () => {
     }
     await runOcrPath(path);
   } catch (e) {
+    runGuard.running = false;
     setStatus("error");
     log(String(e && e.message ? e.message : e));
   }
@@ -602,6 +621,7 @@ $("#split").addEventListener("click", async () => {
     const finalText = await pollCoze(jobId);
     $("#output").value = finalText;
     currentContentType = "split";
+    runGuard.splitDone = true;
     const tl = $("#titleLabel");
     if (tl) tl.textContent = "分割结果";
     $("#copy").disabled = !$("#output").value;

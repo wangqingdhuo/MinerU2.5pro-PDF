@@ -8,12 +8,17 @@
 </head>
 <body>
   <div class="app">
+    <!-- 左侧面板：输入与控制 -->
     <div class="left">
       <div class="title">PaddleDev</div>
+      
+      <!-- 本地路径输入 -->
       <div class="field">
         <div class="label">文件路径</div>
         <input id="path" type="text" placeholder="输入 PDF 或图片的本地路径">
       </div>
+      
+      <!-- 文件上传 -->
       <div class="field">
         <div class="label">选择文件</div>
         <div class="fileRow">
@@ -23,14 +28,20 @@
           <button id="clearFile" type="button" disabled>清除</button>
         </div>
       </div>
+      
+      <!-- 操作按钮 -->
       <div class="actions">
         <button id="run">识别</button>
         <button id="copy" disabled>复制</button>
         <button id="preview" type="button" disabled>预览</button>
         <button id="history" type="button">历史记录</button>
       </div>
+      
+      <!-- 状态与日志 -->
       <div class="status" id="status">idle</div>
       <div class="log" id="log"></div>
+      
+      <!-- 第二步：文本分割（Coze 工作流） -->
       <div class="step2">
         <div class="label">第二步 分割文本</div>
         <div class="step2Row">
@@ -56,6 +67,8 @@
         </div>
       </div>
     </div>
+    
+    <!-- 右侧面板：识别结果展示 -->
     <div class="right">
       <div class="rightTitle">
         <div id="titleLabel">识别结果</div>
@@ -64,6 +77,8 @@
       <textarea id="output" spellcheck="false" placeholder="识别内容会显示在这里"></textarea>
     </div>
   </div>
+  
+  <!-- 历史记录模态框 -->
   <div id="historyModal" class="modal" style="display:none;">
     <div class="modalCard">
       <div class="modalHeader">

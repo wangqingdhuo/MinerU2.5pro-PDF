@@ -1,0 +1,3171 @@
+{
+    "logId": "cc4c76d2-8900-4f16-a18d-af4f2b9a982b",
+    "result": {
+        "layoutParsingResults": [
+            {
+                "prunedResult": {
+                    "page_count": 4,
+                    "width": 4670,
+                    "height": 6638,
+                    "model_settings": {
+                        "use_doc_preprocessor": false,
+                        "use_layout_detection": true,
+                        "use_chart_recognition": false,
+                        "use_seal_recognition": true,
+                        "use_ocr_for_image_block": false,
+                        "format_block_content": false,
+                        "merge_layout_blocks": true,
+                        "markdown_ignore_labels": [
+                            "header",
+                            "header_image",
+                            "footer",
+                            "footer_image",
+                            "number",
+                            "footnote",
+                            "aside_text"
+                        ],
+                        "return_layout_polygon_points": true
+                    },
+                    "parsing_res_list": [
+                        {
+                            "block_label": "text",
+                            "block_content": "[2025 南昌一模]地球上的水体存在于海洋、陆地和大气三大领域。整体来看,三大领域的水量没有什么变化,这就是水量平衡原理。下图示意地球三大领域的水量平衡过程,图中 R、S 代表的数值可根据水量平衡原理加以确定。据此完成 1—3 题。",
+                            "block_bbox": [
+                                309,
+                                807,
+                                2421,
+                                1572
+                            ],
+                            "block_id": 0,
+                            "block_order": 1,
+                            "group_id": 0,
+                            "global_block_id": 0,
+                            "global_group_id": 0,
+                            "block_polygon_points": [
+                                [
+                                    309.0,
+                                    807.0
+                                ],
+                                [
+                                    2421.0,
+                                    807.0
+                                ],
+                                [
+                                    2421.0,
+                                    1572.0
+                                ],
+                                [
+                                    309.0,
+                                    1572.0
+                                ]
+                            ]
+                        },
+                        {
+                            "block_label": "image",
+                            "block_content": "",
+                            "block_bbox": [
+                                485,
+                                1606,
+                                2256,
+                                2685
+                            ],
+                            "block_id": 1,
+                            "block_order": null,
+                            "group_id": 1,
+                            "global_block_id": 1,
+                            "global_group_id": 1,
+                            "block_polygon_points": [
+                                [
+                                    485.0,
+                                    1606.0
+                                ],
+                                [
+                                    2256.0,
+                                    1606.0
+                                ],
+                                [
+                                    2256.0,
+                                    2685.0
+                                ],
+                                [
+                                    485.0,
+                                    2685.0
+                                ]
+                            ]
+                        },
+                        {
+                            "block_label": "text",
+                            "block_content": "1. 图示水体转化过程中,有一个环节是\nA. 海洋热量支出的主要方式\nB. 海洋热量收入的主要方式\nC. 陆地热量支出的主要方式\nD. 陆地热量收入的主要方式",
+                            "block_bbox": [
+                                313,
+                                2729,
+                                1976,
+                                3352
+                            ],
+                            "block_id": 2,
+                            "block_order": 2,
+                            "group_id": 2,
+                            "global_block_id": 2,
+                            "global_group_id": 2,
+                            "block_polygon_points": [
+                                [
+                                    313.0,
+                                    2729.0
+                                ],
+                                [
+                                    1976.0,
+                                    2729.0
+                                ],
+                                [
+                                    1976.0,
+                                    3352.0
+                                ],
+                                [
+                                    313.0,
+                                    3352.0
+                                ]
+                            ]
+                        },
+                        {
+                            "block_label": "text",
+                            "block_content": "2. 全球变暖打破水量平衡,造成海域\nA. 水量增多,盐度上升\nB. 水量增多,盐度下降\nC. 水量减少,盐度上升\nD. 水量减少,盐度下降",
+                            "block_bbox": [
+                                304,
+                                3370,
+                                1886,
+                                3984
+                            ],
+                            "block_id": 3,
+                            "block_order": 3,
+                            "group_id": 3,
+                            "global_block_id": 3,
+                            "global_group_id": 3,
+                            "block_polygon_points": [
+                                [
+                                    304.0,
+                                    3370.0
+                                ],
+                                [
+                                    1886.0,
+                                    3370.0
+                                ],
+                                [
+                                    1886.0,
+                                    3984.0
+                                ],
+                                [
+                                    304.0,
+                                    3984.0
+                                ]
+                            ]
+                        },
+                        {
+                            "block_label": "text",
+                            "block_content": "3. 图中 R、S 代表的数值分别是\nA. 129, 47\nB. 129, 57\nC. 119, 47\nD. 119, 57",
+                            "block_bbox": [
+                                307,
+                                4008,
+                                1890,
+                                4371
+                            ],
+                            "block_id": 4,
+                            "block_order": 4,
+                            "group_id": 4,
+                            "global_block_id": 4,
+                            "global_group_id": 4,
+                            "block_polygon_points": [
+                                [
+                                    307.0,
+                                    4008.0
+                                ],
+                                [
+                                    1890.0,
+                                    4008.0
+                                ],
+                                [
+                                    1890.0,
+                                    4371.0
+                                ],
+                                [
+                                    307.0,
+                                    4371.0
+                                ]
+                            ]
+                        },
+                        {
+                            "block_label": "text",
+                            "block_content": "[2025 湖北“新八校”协作体联考]地热流体是温度较高的地下热水、地热蒸汽和热气体的总称。储存地热流体的岩层为热储层,热储层之上的岩层为盖层。下图示意湖北省某地储热构造,该地热泉出露较多。据此完成 4—6 题。",
+                            "block_bbox": [
+                                305,
+                                4387,
+                                2416,
+                                5013
+                            ],
+                            "block_id": 5,
+                            "block_order": 5,
+                            "group_id": 5,
+                            "global_block_id": 5,
+                            "global_group_id": 5,
+                            "block_polygon_points": [
+                                [
+                                    305.0,
+                                    4387.0
+                                ],
+                                [
+                                    2416.0,
+                                    4387.0
+                                ],
+                                [
+                                    2416.0,
+                                    5013.0
+                                ],
+                                [
+                                    305.0,
+                                    5013.0
+                                ]
+                            ]
+                        },
+                        {
+                            "block_label": "chart",
+                            "block_content": "",
+                            "block_bbox": [
+                                424,
+                                5101,
+                                2288,
+                                5996
+                            ],
+                            "block_id": 6,
+                            "block_order": null,
+                            "group_id": 6,
+                            "global_block_id": 6,
+                            "global_group_id": 6,
+                            "block_polygon_points": [
+                                [
+                                    424.0,
+                                    5101.0
+                                ],
+                                [
+                                    2288.0,
+                                    5101.0
+                                ],
+                                [
+                                    2288.0,
+                                    5996.0
+                                ],
+                                [
+                                    424.0,
+                                    5996.0
+                                ]
+                            ]
+                        },
+                        {
+                            "block_label": "text",
+                            "block_content": "4. 图中盖层在地热流体形成过程中的主要作用是\nA. 减少下渗\nB. 减少蒸发\nC. 增温增湿\nD. 隔水保温\n5. 该地地热流体的水体性质及其成因是\nA. 淡水 水岩相互作用强\nB. 咸水 地热高温蒸发强\nC. 淡水 径流循环条件好\nD. 咸水 地热流体流程长",
+                            "block_bbox": [
+                                306,
+                                6081,
+                                2414,
+                                6580
+                            ],
+                            "block_id": 7,
+                            "block_order": 6,
+                            "group_id": 7,
+                            "global_block_id": 7,
+                            "global_group_id": 7,
+                            "block_polygon_points": [
+                                [
+                                    306.0,
+                                    6081.0
+                                ],
+                                [
+                                    2414.0,
+                                    6081.0
+                                ],
+                                [
+                                    2414.0,
+                                    6580.0
+                                ],
+                                [
+                                    306.0,
+                                    6580.0
+                                ]
+                            ]
+                        },
+                        {
+                            "block_label": "text",
+                            "block_content": "",
+                            "block_bbox": [
+                                2472,
+                                654,
+                                4269,
+                                1269
+                            ],
+                            "block_id": 8,
+                            "block_order": 7,
+                            "group_id": 7,
+                            "global_block_id": 8,
+                            "global_group_id": 8,
+                            "block_polygon_points": [
+                                [
+                                    2472.0,
+                                    654.0
+                                ],
+                                [
+                                    4269.0,
+                                    654.0
+                                ],
+                                [
+                                    4269.0,
+                                    1269.0
+                                ],
+                                [
+                                    2472.0,
+                                    1269.0
+                                ]
+                            ]
+                        },
+                        {
+                            "block_label": "text",
+                            "block_content": "6. 图中甲处地热流体集中分布的有利条件有\n①裂隙发育,地下水赋存\n②沟谷低洼,地表水汇集\n③岩层凸起,地热能聚集\n④岩浆冷却,地热能释放\nA. ①③ B. ①④ C. ②③ D. ②④",
+                            "block_bbox": [
+                                2469,
+                                1289,
+                                4417,
+                                2027
+                            ],
+                            "block_id": 9,
+                            "block_order": 8,
+                            "group_id": 9,
+                            "global_block_id": 9,
+                            "global_group_id": 9,
+                            "block_polygon_points": [
+                                [
+                                    2469.0,
+                                    1289.0
+                                ],
+                                [
+                                    4417.0,
+                                    1289.0
+                                ],
+                                [
+                                    4417.0,
+                                    2027.0
+                                ],
+                                [
+                                    2469.0,
+                                    2027.0
+                                ]
+                            ]
+                        },
+                        {
+                            "block_label": "text",
+                            "block_content": "[2025 长春质量检测]冻土存在的地层通常被视为隔水层或弱透水层。全球变暖导致的冻土退化区域水循环过程影响很大。下图为黄河源区冻土退化前后区域水循环模式图。据此完成 7—8 题。",
+                            "block_bbox": [
+                                2469,
+                                2043,
+                                4578,
+                                2663
+                            ],
+                            "block_id": 10,
+                            "block_order": 9,
+                            "group_id": 10,
+                            "global_block_id": 10,
+                            "global_group_id": 10,
+                            "block_polygon_points": [
+                                [
+                                    2469.0,
+                                    2043.0
+                                ],
+                                [
+                                    4578.0,
+                                    2043.0
+                                ],
+                                [
+                                    4578.0,
+                                    2663.0
+                                ],
+                                [
+                                    2469.0,
+                                    2663.0
+                                ]
+                            ]
+                        },
+                        {
+                            "block_label": "image",
+                            "block_content": "",
+                            "block_bbox": [
+                                2521,
+                                2674,
+                                4506,
+                                3932
+                            ],
+                            "block_id": 11,
+                            "block_order": null,
+                            "group_id": 11,
+                            "global_block_id": 11,
+                            "global_group_id": 11,
+                            "block_polygon_points": [
+                                [
+                                    2521.0,
+                                    2674.0
+                                ],
+                                [
+                                    4506.0,
+                                    2674.0
+                                ],
+                                [
+                                    4506.0,
+                                    3932.0
+                                ],
+                                [
+                                    2521.0,
+                                    3932.0
+                                ]
+                            ]
+                        },
+                        {
+                            "block_label": "image",
+                            "block_content": "",
+                            "block_bbox": [
+                                2628,
+                                4031,
+                                4478,
+                                5303
+                            ],
+                            "block_id": 12,
+                            "block_order": null,
+                            "group_id": 12,
+                            "global_block_id": 12,
+                            "global_group_id": 12,
+                            "block_polygon_points": [
+                                [
+                                    2628.0,
+                                    4031.0
+                                ],
+                                [
+                                    4478.0,
+                                    4031.0
+                                ],
+                                [
+                                    4478.0,
+                                    5303.0
+                                ],
+                                [
+                                    2628.0,
+                                    5303.0
+                                ]
+                            ]
+                        },
+                        {
+                            "block_label": "text",
+                            "block_content": "7.与冻土退化前相比,该地区\nA.地表径流补给河流占比增加\nB.蒸腾量与实际蒸发量均增加\nC.地表的持水能力减弱\nD.地下水水位大幅升高",
+                            "block_bbox": [
+                                2465,
+                                5334,
+                                3921,
+                                5943
+                            ],
+                            "block_id": 13,
+                            "block_order": 10,
+                            "group_id": 13,
+                            "global_block_id": 13,
+                            "global_group_id": 13,
+                            "block_polygon_points": [
+                                [
+                                    2465.0,
+                                    5334.0
+                                ],
+                                [
+                                    3921.0,
+                                    5334.0
+                                ],
+                                [
+                                    3921.0,
+                                    5943.0
+                                ],
+                                [
+                                    2465.0,
+                                    5943.0
+                                ]
+                            ]
+                        },
+                        {
+                            "block_label": "text",
+                            "block_content": "8. 研究表明,随着气温升高,冻土融化\nA. 地表出现泉的可能性更大\nB. 使该地区植被生长更茂盛\nC. 导致区域内湿地面积扩大\nD. 有利于地下水的深部循环",
+                            "block_bbox": [
+                                2468,
+                                5963,
+                                4090,
+                                6581
+                            ],
+                            "block_id": 14,
+                            "block_order": 11,
+                            "group_id": 14,
+                            "global_block_id": 14,
+                            "global_group_id": 14,
+                            "block_polygon_points": [
+                                [
+                                    2468.0,
+                                    5963.0
+                                ],
+                                [
+                                    4090.0,
+                                    5963.0
+                                ],
+                                [
+                                    4090.0,
+                                    6581.0
+                                ],
+                                [
+                                    2468.0,
+                                    6581.0
+                                ]
+                            ]
+                        }
+                    ],
+                    "layout_det_res": {
+                        "boxes": [
+                            {
+                                "cls_id": 22,
+                                "label": "text",
+                                "score": 0.949314296245575,
+                                "coordinate": [
+                                    309,
+                                    807,
+                                    2421,
+                                    1572
+                                ],
+                                "order": 1,
+                                "polygon_points": [
+                                    [
+                                        309.0,
+                                        807.0
+                                    ],
+                                    [
+                                        2421.0,
+                                        807.0
+                                    ],
+                                    [
+                                        2421.0,
+                                        1572.0
+                                    ],
+                                    [
+                                        309.0,
+                                        1572.0
+                                    ]
+                                ]
+                            },
+                            {
+                                "cls_id": 14,
+                                "label": "image",
+                                "score": 0.9534506797790527,
+                                "coordinate": [
+                                    485,
+                                    1606,
+                                    2256,
+                                    2685
+                                ],
+                                "order": null,
+                                "polygon_points": [
+                                    [
+                                        485.0,
+                                        1606.0
+                                    ],
+                                    [
+                                        2256.0,
+                                        1606.0
+                                    ],
+                                    [
+                                        2256.0,
+                                        2685.0
+                                    ],
+                                    [
+                                        485.0,
+                                        2685.0
+                                    ]
+                                ]
+                            },
+                            {
+                                "cls_id": 22,
+                                "label": "text",
+                                "score": 0.9366824626922607,
+                                "coordinate": [
+                                    313,
+                                    2729,
+                                    1976,
+                                    3352
+                                ],
+                                "order": 2,
+                                "polygon_points": [
+                                    [
+                                        313.0,
+                                        2729.0
+                                    ],
+                                    [
+                                        1976.0,
+                                        2729.0
+                                    ],
+                                    [
+                                        1976.0,
+                                        3352.0
+                                    ],
+                                    [
+                                        313.0,
+                                        3352.0
+                                    ]
+                                ]
+                            },
+                            {
+                                "cls_id": 22,
+                                "label": "text",
+                                "score": 0.9387480020523071,
+                                "coordinate": [
+                                    304,
+                                    3370,
+                                    1886,
+                                    3984
+                                ],
+                                "order": 3,
+                                "polygon_points": [
+                                    [
+                                        304.0,
+                                        3370.0
+                                    ],
+                                    [
+                                        1886.0,
+                                        3370.0
+                                    ],
+                                    [
+                                        1886.0,
+                                        3984.0
+                                    ],
+                                    [
+                                        304.0,
+                                        3984.0
+                                    ]
+                                ]
+                            },
+                            {
+                                "cls_id": 22,
+                                "label": "text",
+                                "score": 0.9264398217201233,
+                                "coordinate": [
+                                    307,
+                                    4008,
+                                    1890,
+                                    4371
+                                ],
+                                "order": 4,
+                                "polygon_points": [
+                                    [
+                                        307.0,
+                                        4008.0
+                                    ],
+                                    [
+                                        1890.0,
+                                        4008.0
+                                    ],
+                                    [
+                                        1890.0,
+                                        4371.0
+                                    ],
+                                    [
+                                        307.0,
+                                        4371.0
+                                    ]
+                                ]
+                            },
+                            {
+                                "cls_id": 22,
+                                "label": "text",
+                                "score": 0.951852560043335,
+                                "coordinate": [
+                                    305,
+                                    4387,
+                                    2416,
+                                    5013
+                                ],
+                                "order": 5,
+                                "polygon_points": [
+                                    [
+                                        305.0,
+                                        4387.0
+                                    ],
+                                    [
+                                        2416.0,
+                                        4387.0
+                                    ],
+                                    [
+                                        2416.0,
+                                        5013.0
+                                    ],
+                                    [
+                                        305.0,
+                                        5013.0
+                                    ]
+                                ]
+                            },
+                            {
+                                "cls_id": 3,
+                                "label": "chart",
+                                "score": 0.874538004398346,
+                                "coordinate": [
+                                    424,
+                                    5101,
+                                    2288,
+                                    5996
+                                ],
+                                "order": null,
+                                "polygon_points": [
+                                    [
+                                        424.0,
+                                        5101.0
+                                    ],
+                                    [
+                                        2288.0,
+                                        5101.0
+                                    ],
+                                    [
+                                        2288.0,
+                                        5996.0
+                                    ],
+                                    [
+                                        424.0,
+                                        5996.0
+                                    ]
+                                ]
+                            },
+                            {
+                                "cls_id": 22,
+                                "label": "text",
+                                "score": 0.9345238208770752,
+                                "coordinate": [
+                                    306,
+                                    6081,
+                                    2414,
+                                    6580
+                                ],
+                                "order": 6,
+                                "polygon_points": [
+                                    [
+                                        306.0,
+                                        6081.0
+                                    ],
+                                    [
+                                        2414.0,
+                                        6081.0
+                                    ],
+                                    [
+                                        2414.0,
+                                        6580.0
+                                    ],
+                                    [
+                                        306.0,
+                                        6580.0
+                                    ]
+                                ]
+                            },
+                            {
+                                "cls_id": 22,
+                                "label": "text",
+                                "score": 0.9328002333641052,
+                                "coordinate": [
+                                    2472,
+                                    654,
+                                    4269,
+                                    1269
+                                ],
+                                "order": 7,
+                                "polygon_points": [
+                                    [
+                                        2472.0,
+                                        654.0
+                                    ],
+                                    [
+                                        4269.0,
+                                        654.0
+                                    ],
+                                    [
+                                        4269.0,
+                                        1269.0
+                                    ],
+                                    [
+                                        2472.0,
+                                        1269.0
+                                    ]
+                                ]
+                            },
+                            {
+                                "cls_id": 22,
+                                "label": "text",
+                                "score": 0.945404589176178,
+                                "coordinate": [
+                                    2469,
+                                    1289,
+                                    4417,
+                                    2027
+                                ],
+                                "order": 8,
+                                "polygon_points": [
+                                    [
+                                        2469.0,
+                                        1289.0
+                                    ],
+                                    [
+                                        4417.0,
+                                        1289.0
+                                    ],
+                                    [
+                                        4417.0,
+                                        2027.0
+                                    ],
+                                    [
+                                        2469.0,
+                                        2027.0
+                                    ]
+                                ]
+                            },
+                            {
+                                "cls_id": 22,
+                                "label": "text",
+                                "score": 0.9432989954948425,
+                                "coordinate": [
+                                    2469,
+                                    2043,
+                                    4578,
+                                    2663
+                                ],
+                                "order": 9,
+                                "polygon_points": [
+                                    [
+                                        2469.0,
+                                        2043.0
+                                    ],
+                                    [
+                                        4578.0,
+                                        2043.0
+                                    ],
+                                    [
+                                        4578.0,
+                                        2663.0
+                                    ],
+                                    [
+                                        2469.0,
+                                        2663.0
+                                    ]
+                                ]
+                            },
+                            {
+                                "cls_id": 14,
+                                "label": "image",
+                                "score": 0.8633698225021362,
+                                "coordinate": [
+                                    2521,
+                                    2674,
+                                    4506,
+                                    3932
+                                ],
+                                "order": null,
+                                "polygon_points": [
+                                    [
+                                        2521.0,
+                                        2674.0
+                                    ],
+                                    [
+                                        4506.0,
+                                        2674.0
+                                    ],
+                                    [
+                                        4506.0,
+                                        3932.0
+                                    ],
+                                    [
+                                        2521.0,
+                                        3932.0
+                                    ]
+                                ]
+                            },
+                            {
+                                "cls_id": 14,
+                                "label": "image",
+                                "score": 0.8880318999290466,
+                                "coordinate": [
+                                    2628,
+                                    4031,
+                                    4478,
+                                    5303
+                                ],
+                                "order": null,
+                                "polygon_points": [
+                                    [
+                                        2628.0,
+                                        4031.0
+                                    ],
+                                    [
+                                        4478.0,
+                                        4031.0
+                                    ],
+                                    [
+                                        4478.0,
+                                        5303.0
+                                    ],
+                                    [
+                                        2628.0,
+                                        5303.0
+                                    ]
+                                ]
+                            },
+                            {
+                                "cls_id": 22,
+                                "label": "text",
+                                "score": 0.9283507466316223,
+                                "coordinate": [
+                                    2465,
+                                    5334,
+                                    3921,
+                                    5943
+                                ],
+                                "order": 10,
+                                "polygon_points": [
+                                    [
+                                        2465.0,
+                                        5334.0
+                                    ],
+                                    [
+                                        3921.0,
+                                        5334.0
+                                    ],
+                                    [
+                                        3921.0,
+                                        5943.0
+                                    ],
+                                    [
+                                        2465.0,
+                                        5943.0
+                                    ]
+                                ]
+                            },
+                            {
+                                "cls_id": 22,
+                                "label": "text",
+                                "score": 0.9490606188774109,
+                                "coordinate": [
+                                    2468,
+                                    5963,
+                                    4090,
+                                    6581
+                                ],
+                                "order": 11,
+                                "polygon_points": [
+                                    [
+                                        2468.0,
+                                        5963.0
+                                    ],
+                                    [
+                                        4090.0,
+                                        5963.0
+                                    ],
+                                    [
+                                        4090.0,
+                                        6581.0
+                                    ],
+                                    [
+                                        2468.0,
+                                        6581.0
+                                    ]
+                                ]
+                            }
+                        ]
+                    }
+                },
+                "markdown": {
+                    "text": "[2025 南昌一模]地球上的水体存在于海洋、陆地和大气三大领域。整体来看,三大领域的水量没有什么变化,这就是水量平衡原理。下图示意地球三大领域的水量平衡过程,图中 R、S 代表的数值可根据水量平衡原理加以确定。据此完成 1—3 题。\n\n<div style=\"text-align: center;\"><img src=\"imgs/img_in_image_box_485_1606_2256_2685.jpg\" alt=\"Image\" width=\"37%\" /></div>\n\n\n1. 图示水体转化过程中,有一个环节是\n\nA. 海洋热量支出的主要方式\n\nB. 海洋热量收入的主要方式\n\nC. 陆地热量支出的主要方式\n\nD. 陆地热量收入的主要方式\n\n2. 全球变暖打破水量平衡,造成海域\n\nA. 水量增多,盐度上升\n\nB. 水量增多,盐度下降\n\nC. 水量减少,盐度上升\n\nD. 水量减少,盐度下降\n\n3. 图中 R、S 代表的数值分别是\n\nA. 129, 47\n\nB. 129, 57\n\nC. 119, 47\n\nD. 119, 57\n\n[2025 湖北“新八校”协作体联考]地热流体是温度较高的地下热水、地热蒸汽和热气体的总称。储存地热流体的岩层为热储层,热储层之上的岩层为盖层。下图示意湖北省某地储热构造,该地热泉出露较多。据此完成 4—6 题。\n\n<div style=\"text-align: center;\"><img src=\"imgs/img_in_chart_box_424_5101_2288_5996.jpg\" alt=\"Image\" width=\"39%\" /></div>\n\n\n4. 图中盖层在地热流体形成过程中的主要作用是\n\nA. 减少下渗\n\nB. 减少蒸发\n\nC. 增温增湿\n\nD. 隔水保温\n\n5. 该地地热流体的水体性质及其成因是\n\nA. 淡水 水岩相互作用强\n\nB. 咸水 地热高温蒸发强\n\nC. 淡水 径流循环条件好\n\nD. 咸水 地热流体流程长\n\n\n\n6. 图中甲处地热流体集中分布的有利条件有\n\n①裂隙发育,地下水赋存\n\n②沟谷低洼,地表水汇集\n\n③岩层凸起,地热能聚集\n\n④岩浆冷却,地热能释放\n\nA. ①③ B. ①④ C. ②③ D. ②④\n\n[2025 长春质量检测]冻土存在的地层通常被视为隔水层或弱透水层。全球变暖导致的冻土退化区域水循环过程影响很大。下图为黄河源区冻土退化前后区域水循环模式图。据此完成 7—8 题。\n\n<div style=\"text-align: center;\"><img src=\"imgs/img_in_image_box_2521_2674_4506_3932.jpg\" alt=\"Image\" width=\"42%\" /></div>\n\n\n<div style=\"text-align: center;\"><img src=\"imgs/img_in_image_box_2628_4031_4478_5303.jpg\" alt=\"Image\" width=\"39%\" /></div>\n\n\n7.与冻土退化前相比,该地区\n\nA.地表径流补给河流占比增加\n\nB.蒸腾量与实际蒸发量均增加\n\nC.地表的持水能力减弱\n\nD.地下水水位大幅升高\n\n8. 研究表明,随着气温升高,冻土融化\n\nA. 地表出现泉的可能性更大\n\nB. 使该地区植被生长更茂盛\n\nC. 导致区域内湿地面积扩大\n\nD. 有利于地下水的深部循环",
+                    "images": {
+                        "imgs/img_in_image_box_485_1606_2256_2685.jpg": "https://pplines-online.bj.bcebos.com/deploy/official/paddleocr/pp-ocr-vl-15//cc4c76d2-8900-4f16-a18d-af4f2b9a982b/markdown_0/imgs/img_in_image_box_485_1606_2256_2685.jpg?authorization=bce-auth-v1%2FALTAKzReLNvew3ySINYJ0fuAMN%2F2026-03-25T03%3A05%3A40Z%2F-1%2F%2F0e5023272e6b11739b6f859d6c60c9e8addcf22df427fca4ecf8d4c4606a4319",
+                        "imgs/img_in_chart_box_424_5101_2288_5996.jpg": "https://pplines-online.bj.bcebos.com/deploy/official/paddleocr/pp-ocr-vl-15//cc4c76d2-8900-4f16-a18d-af4f2b9a982b/markdown_0/imgs/img_in_chart_box_424_5101_2288_5996.jpg?authorization=bce-auth-v1%2FALTAKzReLNvew3ySINYJ0fuAMN%2F2026-03-25T03%3A05%3A40Z%2F-1%2F%2F2a1301a321520185a76a68303c0be3ac6ca9a970ff745ed41c3ceb0473ba394d",
+                        "imgs/img_in_image_box_2521_2674_4506_3932.jpg": "https://pplines-online.bj.bcebos.com/deploy/official/paddleocr/pp-ocr-vl-15//cc4c76d2-8900-4f16-a18d-af4f2b9a982b/markdown_0/imgs/img_in_image_box_2521_2674_4506_3932.jpg?authorization=bce-auth-v1%2FALTAKzReLNvew3ySINYJ0fuAMN%2F2026-03-25T03%3A05%3A40Z%2F-1%2F%2F5db7056dc134c67654f7781dd2102b47f3bd6a66f3042f40fece5aeb1ff35ecd",
+                        "imgs/img_in_image_box_2628_4031_4478_5303.jpg": "https://pplines-online.bj.bcebos.com/deploy/official/paddleocr/pp-ocr-vl-15//cc4c76d2-8900-4f16-a18d-af4f2b9a982b/markdown_0/imgs/img_in_image_box_2628_4031_4478_5303.jpg?authorization=bce-auth-v1%2FALTAKzReLNvew3ySINYJ0fuAMN%2F2026-03-25T03%3A05%3A40Z%2F-1%2F%2Fe2d6f135121634b30485967890b46a8e46e022326e0c7466d3d0220ee9072e6f"
+                    }
+                },
+                "outputImages": {
+                    "layout_det_res": "https://pplines-online.bj.bcebos.com/deploy/official/paddleocr/pp-ocr-vl-15//cc4c76d2-8900-4f16-a18d-af4f2b9a982b/layout_det_res_0.jpg?authorization=bce-auth-v1%2FALTAKzReLNvew3ySINYJ0fuAMN%2F2026-03-25T03%3A05%3A44Z%2F-1%2F%2F2c8d1b07e85fe759fa41aee9f752e83558ce9ebd026bbc7c075cf82046f50a04"
+                },
+                "inputImage": "https://pplines-online.bj.bcebos.com/deploy/official/paddleocr/pp-ocr-vl-15//cc4c76d2-8900-4f16-a18d-af4f2b9a982b/input_img_0.jpg?authorization=bce-auth-v1%2FALTAKzReLNvew3ySINYJ0fuAMN%2F2026-03-25T03%3A05%3A45Z%2F-1%2F%2F2761107dbf55248b775eb04709621b42595c763428572871d3139690237e79b5"
+            },
+            {
+                "prunedResult": {
+                    "page_count": 4,
+                    "width": 4720,
+                    "height": 6670,
+                    "model_settings": {
+                        "use_doc_preprocessor": false,
+                        "use_layout_detection": true,
+                        "use_chart_recognition": false,
+                        "use_seal_recognition": true,
+                        "use_ocr_for_image_block": false,
+                        "format_block_content": false,
+                        "merge_layout_blocks": true,
+                        "markdown_ignore_labels": [
+                            "header",
+                            "header_image",
+                            "footer",
+                            "footer_image",
+                            "number",
+                            "footnote",
+                            "aside_text"
+                        ],
+                        "return_layout_polygon_points": true
+                    },
+                    "parsing_res_list": [
+                        {
+                            "block_label": "text",
+                            "block_content": "[2025 湖北“新八校”协作体联考] 白令海是一个半封闭海域，由于海面高度差，白令海峡海水常年存在稳定的海流。研究表明，海水结冰的析盐过程加剧冷水下沉，导致海水层化，影响浮游生物和深海鱼类的分布。下图示意 2011 年、2012 年、2018 年、2020 年 3 月 20 日白令海冰边缘线。据此完成 9—10 题。",
+                            "block_bbox": [
+                                66,
+                                243,
+                                2195,
+                                1110
+                            ],
+                            "block_id": 0,
+                            "block_order": 1,
+                            "group_id": 0,
+                            "global_block_id": 15,
+                            "global_group_id": 15,
+                            "block_polygon_points": [
+                                [
+                                    66.0,
+                                    243.0
+                                ],
+                                [
+                                    2195.0,
+                                    243.0
+                                ],
+                                [
+                                    2195.0,
+                                    1110.0
+                                ],
+                                [
+                                    66.0,
+                                    1110.0
+                                ]
+                            ]
+                        },
+                        {
+                            "block_label": "image",
+                            "block_content": "",
+                            "block_bbox": [
+                                285,
+                                1134,
+                                1980,
+                                2074
+                            ],
+                            "block_id": 1,
+                            "block_order": null,
+                            "group_id": 1,
+                            "global_block_id": 16,
+                            "global_group_id": 16,
+                            "block_polygon_points": [
+                                [
+                                    285.0,
+                                    1134.0
+                                ],
+                                [
+                                    1980.0,
+                                    1134.0
+                                ],
+                                [
+                                    1980.0,
+                                    2074.0
+                                ],
+                                [
+                                    285.0,
+                                    2074.0
+                                ]
+                            ]
+                        },
+                        {
+                            "block_label": "text",
+                            "block_content": "9. 推测白令海峡常年性海流的流向及其形成因素分别是\nA. 由南向北 密度差异 B. 由北向南 盛行风向 C. 由东向西 陆地轮廓 D. 由西向东 温度差异",
+                            "block_bbox": [
+                                58,
+                                2111,
+                                2183,
+                                2603
+                            ],
+                            "block_id": 2,
+                            "block_order": 2,
+                            "group_id": 2,
+                            "global_block_id": 17,
+                            "global_group_id": 17,
+                            "block_polygon_points": [
+                                [
+                                    58.0,
+                                    2111.0
+                                ],
+                                [
+                                    2183.0,
+                                    2111.0
+                                ],
+                                [
+                                    2183.0,
+                                    2603.0
+                                ],
+                                [
+                                    58.0,
+                                    2603.0
+                                ]
+                            ]
+                        },
+                        {
+                            "block_label": "text",
+                            "block_content": "10. 白令海海冰面积缩小会导致该海域海洋生产力下降, 判断理由有\n①析盐现象减弱, 海水层化现象减弱\n②海水垂直交换增强, 表层营养盐减少\n③浮游生物减少, 鱼类的饵料减少\n④底层冷水区范围扩大, 深海鱼类北迁\nA. ①② B. ①③ C. ②③ D. ③④",
+                            "block_bbox": [
+                                69,
+                                2621,
+                                2179,
+                                3486
+                            ],
+                            "block_id": 3,
+                            "block_order": 3,
+                            "group_id": 3,
+                            "global_block_id": 18,
+                            "global_group_id": 18,
+                            "block_polygon_points": [
+                                [
+                                    69.0,
+                                    2621.0
+                                ],
+                                [
+                                    2179.0,
+                                    2621.0
+                                ],
+                                [
+                                    2179.0,
+                                    3486.0
+                                ],
+                                [
+                                    69.0,
+                                    3486.0
+                                ]
+                            ]
+                        },
+                        {
+                            "block_label": "text",
+                            "block_content": "[2025 南京学情调研]某同学通过网络平台查看洋流的实时流动动画,发现某海域的洋流流向发生了异常,下图为根据网站动画绘制的该海域洋流总体流向示意图。据此完成 11—12 题。",
+                            "block_bbox": [
+                                56,
+                                3500,
+                                2191,
+                                3992
+                            ],
+                            "block_id": 4,
+                            "block_order": 4,
+                            "group_id": 4,
+                            "global_block_id": 19,
+                            "global_group_id": 19,
+                            "block_polygon_points": [
+                                [
+                                    56.0,
+                                    3500.0
+                                ],
+                                [
+                                    2191.0,
+                                    3500.0
+                                ],
+                                [
+                                    2191.0,
+                                    3992.0
+                                ],
+                                [
+                                    56.0,
+                                    3992.0
+                                ]
+                            ]
+                        },
+                        {
+                            "block_label": "image",
+                            "block_content": "",
+                            "block_bbox": [
+                                361,
+                                4007,
+                                1914,
+                                5815
+                            ],
+                            "block_id": 5,
+                            "block_order": null,
+                            "group_id": 5,
+                            "global_block_id": 20,
+                            "global_group_id": 20,
+                            "block_polygon_points": [
+                                [
+                                    361.0,
+                                    4007.0
+                                ],
+                                [
+                                    1914.0,
+                                    4007.0
+                                ],
+                                [
+                                    1914.0,
+                                    5815.0
+                                ],
+                                [
+                                    361.0,
+                                    5815.0
+                                ]
+                            ]
+                        },
+                        {
+                            "block_label": "text",
+                            "block_content": "11. 该时刻关于图示海域甲、乙、丙三处说法正确的是\nA. 甲处洋流常年稳定流动\nB. 乙处洋流类型为风海流\nC. 乙处表层海水盐度最高\nD. 丙处表层等温线更密集\n12. 图示海域洋流流向异常持续数月，可能导致\nA. 秘鲁渔场捕获鱼量大增\nB. 澳大利亚森林火情严重\nC. 中南半岛火山喷发频繁\nD. 我国南北方降水均增多",
+                            "block_bbox": [
+                                54,
+                                5841,
+                                2185,
+                                6583
+                            ],
+                            "block_id": 6,
+                            "block_order": 5,
+                            "group_id": 6,
+                            "global_block_id": 21,
+                            "global_group_id": 21,
+                            "block_polygon_points": [
+                                [
+                                    54.0,
+                                    5841.0
+                                ],
+                                [
+                                    2185.0,
+                                    5841.0
+                                ],
+                                [
+                                    2185.0,
+                                    6583.0
+                                ],
+                                [
+                                    54.0,
+                                    6583.0
+                                ]
+                            ]
+                        },
+                        {
+                            "block_label": "text",
+                            "block_content": "",
+                            "block_bbox": [
+                                2243,
+                                92,
+                                4289,
+                                691
+                            ],
+                            "block_id": 7,
+                            "block_order": 6,
+                            "group_id": 6,
+                            "global_block_id": 22,
+                            "global_group_id": 22,
+                            "block_polygon_points": [
+                                [
+                                    2243.0,
+                                    92.0
+                                ],
+                                [
+                                    4289.0,
+                                    92.0
+                                ],
+                                [
+                                    4289.0,
+                                    691.0
+                                ],
+                                [
+                                    2243.0,
+                                    691.0
+                                ]
+                            ]
+                        },
+                        {
+                            "block_label": "text",
+                            "block_content": "[2025 深圳调研考试]黑海地区年降水量为600—800 mm，周边河流年平均注入淡水量为355亿  $ m^{3} $ 。黑海平均水深为1315 m，仅通过狭窄的马尔马拉海与地中海相连。黑海表层与深层海水密度差异大，被称为“双层海”。下图为黑海周边流域图。据此完成 13—14 题。",
+                            "block_bbox": [
+                                2236,
+                                715,
+                                4355,
+                                1445
+                            ],
+                            "block_id": 8,
+                            "block_order": 7,
+                            "group_id": 8,
+                            "global_block_id": 23,
+                            "global_group_id": 23,
+                            "block_polygon_points": [
+                                [
+                                    2236.0,
+                                    715.0
+                                ],
+                                [
+                                    4355.0,
+                                    715.0
+                                ],
+                                [
+                                    4355.0,
+                                    1445.0
+                                ],
+                                [
+                                    2236.0,
+                                    1445.0
+                                ]
+                            ]
+                        },
+                        {
+                            "block_label": "image",
+                            "block_content": "",
+                            "block_bbox": [
+                                2581,
+                                1476,
+                                4004,
+                                2454
+                            ],
+                            "block_id": 9,
+                            "block_order": null,
+                            "group_id": 9,
+                            "global_block_id": 24,
+                            "global_group_id": 24,
+                            "block_polygon_points": [
+                                [
+                                    2581.0,
+                                    1476.0
+                                ],
+                                [
+                                    4004.0,
+                                    1476.0
+                                ],
+                                [
+                                    4004.0,
+                                    2454.0
+                                ],
+                                [
+                                    2581.0,
+                                    2454.0
+                                ]
+                            ]
+                        },
+                        {
+                            "block_label": "figure_title",
+                            "block_content": "山脉河流水域",
+                            "block_bbox": [
+                                2904,
+                                2432,
+                                3567,
+                                2504
+                            ],
+                            "block_id": 10,
+                            "block_order": null,
+                            "group_id": 10,
+                            "global_block_id": 25,
+                            "global_group_id": 25,
+                            "block_polygon_points": [
+                                [
+                                    2904,
+                                    2432
+                                ],
+                                [
+                                    2904,
+                                    2503
+                                ],
+                                [
+                                    3566,
+                                    2503
+                                ],
+                                [
+                                    3566,
+                                    2432
+                                ]
+                            ]
+                        },
+                        {
+                            "block_label": "text",
+                            "block_content": "13. 马尔马拉海与黑海的盐度差异及两者间水体交换方式是\nA. 马尔马拉海盐度高, 表层海水流向黑海\nB. 黑海盐度低, 表层海水流向马尔马拉海\nC. 马尔马拉海盐度低, 深层海水流向黑海\nD. 黑海盐度高, 深层海水流向马尔马拉海",
+                            "block_bbox": [
+                                2242,
+                                2520,
+                                4347,
+                                3253
+                            ],
+                            "block_id": 11,
+                            "block_order": 8,
+                            "group_id": 11,
+                            "global_block_id": 26,
+                            "global_group_id": 26,
+                            "block_polygon_points": [
+                                [
+                                    2242.0,
+                                    2520.0
+                                ],
+                                [
+                                    4347.0,
+                                    2520.0
+                                ],
+                                [
+                                    4347.0,
+                                    3253.0
+                                ],
+                                [
+                                    2242.0,
+                                    3253.0
+                                ]
+                            ]
+                        },
+                        {
+                            "block_label": "text",
+                            "block_content": "14. 亚速海比黑海更容易结冰,与之相关性最小的原因是亚速海\nA. 盐度更低\nB. 水量更少\nC. 风浪更大\nD. 纬度更高",
+                            "block_bbox": [
+                                2244,
+                                3266,
+                                4347,
+                                3753
+                            ],
+                            "block_id": 12,
+                            "block_order": 9,
+                            "group_id": 12,
+                            "global_block_id": 27,
+                            "global_group_id": 27,
+                            "block_polygon_points": [
+                                [
+                                    2244.0,
+                                    3266.0
+                                ],
+                                [
+                                    4347.0,
+                                    3266.0
+                                ],
+                                [
+                                    4347.0,
+                                    3753.0
+                                ],
+                                [
+                                    2244.0,
+                                    3753.0
+                                ]
+                            ]
+                        }
+                    ],
+                    "layout_det_res": {
+                        "boxes": [
+                            {
+                                "cls_id": 22,
+                                "label": "text",
+                                "score": 0.9535254836082458,
+                                "coordinate": [
+                                    66,
+                                    243,
+                                    2195,
+                                    1110
+                                ],
+                                "order": 1,
+                                "polygon_points": [
+                                    [
+                                        66.0,
+                                        243.0
+                                    ],
+                                    [
+                                        2195.0,
+                                        243.0
+                                    ],
+                                    [
+                                        2195.0,
+                                        1110.0
+                                    ],
+                                    [
+                                        66.0,
+                                        1110.0
+                                    ]
+                                ]
+                            },
+                            {
+                                "cls_id": 14,
+                                "label": "image",
+                                "score": 0.9591550827026367,
+                                "coordinate": [
+                                    285,
+                                    1134,
+                                    1980,
+                                    2074
+                                ],
+                                "order": null,
+                                "polygon_points": [
+                                    [
+                                        285.0,
+                                        1134.0
+                                    ],
+                                    [
+                                        1980.0,
+                                        1134.0
+                                    ],
+                                    [
+                                        1980.0,
+                                        2074.0
+                                    ],
+                                    [
+                                        285.0,
+                                        2074.0
+                                    ]
+                                ]
+                            },
+                            {
+                                "cls_id": 22,
+                                "label": "text",
+                                "score": 0.9253240823745728,
+                                "coordinate": [
+                                    58,
+                                    2111,
+                                    2183,
+                                    2603
+                                ],
+                                "order": 2,
+                                "polygon_points": [
+                                    [
+                                        58.0,
+                                        2111.0
+                                    ],
+                                    [
+                                        2183.0,
+                                        2111.0
+                                    ],
+                                    [
+                                        2183.0,
+                                        2603.0
+                                    ],
+                                    [
+                                        58.0,
+                                        2603.0
+                                    ]
+                                ]
+                            },
+                            {
+                                "cls_id": 22,
+                                "label": "text",
+                                "score": 0.939911961555481,
+                                "coordinate": [
+                                    69,
+                                    2621,
+                                    2179,
+                                    3486
+                                ],
+                                "order": 3,
+                                "polygon_points": [
+                                    [
+                                        69.0,
+                                        2621.0
+                                    ],
+                                    [
+                                        2179.0,
+                                        2621.0
+                                    ],
+                                    [
+                                        2179.0,
+                                        3486.0
+                                    ],
+                                    [
+                                        69.0,
+                                        3486.0
+                                    ]
+                                ]
+                            },
+                            {
+                                "cls_id": 22,
+                                "label": "text",
+                                "score": 0.9438839554786682,
+                                "coordinate": [
+                                    56,
+                                    3500,
+                                    2191,
+                                    3992
+                                ],
+                                "order": 4,
+                                "polygon_points": [
+                                    [
+                                        56.0,
+                                        3500.0
+                                    ],
+                                    [
+                                        2191.0,
+                                        3500.0
+                                    ],
+                                    [
+                                        2191.0,
+                                        3992.0
+                                    ],
+                                    [
+                                        56.0,
+                                        3992.0
+                                    ]
+                                ]
+                            },
+                            {
+                                "cls_id": 14,
+                                "label": "image",
+                                "score": 0.9750334620475769,
+                                "coordinate": [
+                                    361,
+                                    4007,
+                                    1914,
+                                    5815
+                                ],
+                                "order": null,
+                                "polygon_points": [
+                                    [
+                                        361.0,
+                                        4007.0
+                                    ],
+                                    [
+                                        1914.0,
+                                        4007.0
+                                    ],
+                                    [
+                                        1914.0,
+                                        5815.0
+                                    ],
+                                    [
+                                        361.0,
+                                        5815.0
+                                    ]
+                                ]
+                            },
+                            {
+                                "cls_id": 22,
+                                "label": "text",
+                                "score": 0.9374967813491821,
+                                "coordinate": [
+                                    54,
+                                    5841,
+                                    2185,
+                                    6583
+                                ],
+                                "order": 5,
+                                "polygon_points": [
+                                    [
+                                        54.0,
+                                        5841.0
+                                    ],
+                                    [
+                                        2185.0,
+                                        5841.0
+                                    ],
+                                    [
+                                        2185.0,
+                                        6583.0
+                                    ],
+                                    [
+                                        54.0,
+                                        6583.0
+                                    ]
+                                ]
+                            },
+                            {
+                                "cls_id": 22,
+                                "label": "text",
+                                "score": 0.9316670298576355,
+                                "coordinate": [
+                                    2243,
+                                    92,
+                                    4289,
+                                    691
+                                ],
+                                "order": 6,
+                                "polygon_points": [
+                                    [
+                                        2243.0,
+                                        92.0
+                                    ],
+                                    [
+                                        4289.0,
+                                        92.0
+                                    ],
+                                    [
+                                        4289.0,
+                                        691.0
+                                    ],
+                                    [
+                                        2243.0,
+                                        691.0
+                                    ]
+                                ]
+                            },
+                            {
+                                "cls_id": 22,
+                                "label": "text",
+                                "score": 0.9448924660682678,
+                                "coordinate": [
+                                    2236,
+                                    715,
+                                    4355,
+                                    1445
+                                ],
+                                "order": 7,
+                                "polygon_points": [
+                                    [
+                                        2236.0,
+                                        715.0
+                                    ],
+                                    [
+                                        4355.0,
+                                        715.0
+                                    ],
+                                    [
+                                        4355.0,
+                                        1445.0
+                                    ],
+                                    [
+                                        2236.0,
+                                        1445.0
+                                    ]
+                                ]
+                            },
+                            {
+                                "cls_id": 15,
+                                "label": "inline_formula",
+                                "score": 0.428216814994812,
+                                "coordinate": [
+                                    2542,
+                                    955,
+                                    2693,
+                                    1060
+                                ],
+                                "order": 8,
+                                "polygon_points": [
+                                    [
+                                        2542,
+                                        955
+                                    ],
+                                    [
+                                        2542,
+                                        1059
+                                    ],
+                                    [
+                                        2692,
+                                        1059
+                                    ],
+                                    [
+                                        2692,
+                                        955
+                                    ]
+                                ]
+                            },
+                            {
+                                "cls_id": 14,
+                                "label": "image",
+                                "score": 0.9355588555335999,
+                                "coordinate": [
+                                    2581,
+                                    1476,
+                                    4004,
+                                    2454
+                                ],
+                                "order": null,
+                                "polygon_points": [
+                                    [
+                                        2581.0,
+                                        1476.0
+                                    ],
+                                    [
+                                        4004.0,
+                                        1476.0
+                                    ],
+                                    [
+                                        4004.0,
+                                        2454.0
+                                    ],
+                                    [
+                                        2581.0,
+                                        2454.0
+                                    ]
+                                ]
+                            },
+                            {
+                                "cls_id": 7,
+                                "label": "figure_title",
+                                "score": 0.5914680361747742,
+                                "coordinate": [
+                                    2904,
+                                    2432,
+                                    3567,
+                                    2504
+                                ],
+                                "order": null,
+                                "polygon_points": [
+                                    [
+                                        2904,
+                                        2432
+                                    ],
+                                    [
+                                        2904,
+                                        2503
+                                    ],
+                                    [
+                                        3566,
+                                        2503
+                                    ],
+                                    [
+                                        3566,
+                                        2432
+                                    ]
+                                ]
+                            },
+                            {
+                                "cls_id": 22,
+                                "label": "text",
+                                "score": 0.9403080940246582,
+                                "coordinate": [
+                                    2242,
+                                    2520,
+                                    4347,
+                                    3253
+                                ],
+                                "order": 9,
+                                "polygon_points": [
+                                    [
+                                        2242.0,
+                                        2520.0
+                                    ],
+                                    [
+                                        4347.0,
+                                        2520.0
+                                    ],
+                                    [
+                                        4347.0,
+                                        3253.0
+                                    ],
+                                    [
+                                        2242.0,
+                                        3253.0
+                                    ]
+                                ]
+                            },
+                            {
+                                "cls_id": 22,
+                                "label": "text",
+                                "score": 0.9298772811889648,
+                                "coordinate": [
+                                    2244,
+                                    3266,
+                                    4347,
+                                    3753
+                                ],
+                                "order": 10,
+                                "polygon_points": [
+                                    [
+                                        2244.0,
+                                        3266.0
+                                    ],
+                                    [
+                                        4347.0,
+                                        3266.0
+                                    ],
+                                    [
+                                        4347.0,
+                                        3753.0
+                                    ],
+                                    [
+                                        2244.0,
+                                        3753.0
+                                    ]
+                                ]
+                            }
+                        ]
+                    }
+                },
+                "markdown": {
+                    "text": "[2025 湖北“新八校”协作体联考] 白令海是一个半封闭海域，由于海面高度差，白令海峡海水常年存在稳定的海流。研究表明，海水结冰的析盐过程加剧冷水下沉，导致海水层化，影响浮游生物和深海鱼类的分布。下图示意 2011 年、2012 年、2018 年、2020 年 3 月 20 日白令海冰边缘线。据此完成 9—10 题。\n\n<div style=\"text-align: center;\"><img src=\"imgs/img_in_image_box_285_1134_1980_2074.jpg\" alt=\"Image\" width=\"35%\" /></div>\n\n\n9. 推测白令海峡常年性海流的流向及其形成因素分别是\n\nA. 由南向北 密度差异 B. 由北向南 盛行风向 C. 由东向西 陆地轮廓 D. 由西向东 温度差异\n\n10. 白令海海冰面积缩小会导致该海域海洋生产力下降, 判断理由有\n\n①析盐现象减弱, 海水层化现象减弱\n\n②海水垂直交换增强, 表层营养盐减少\n\n③浮游生物减少, 鱼类的饵料减少\n\n④底层冷水区范围扩大, 深海鱼类北迁\n\nA. ①② B. ①③ C. ②③ D. ③④\n\n[2025 南京学情调研]某同学通过网络平台查看洋流的实时流动动画,发现某海域的洋流流向发生了异常,下图为根据网站动画绘制的该海域洋流总体流向示意图。据此完成 11—12 题。\n\n<div style=\"text-align: center;\"><img src=\"imgs/img_in_image_box_361_4007_1914_5815.jpg\" alt=\"Image\" width=\"32%\" /></div>\n\n\n11. 该时刻关于图示海域甲、乙、丙三处说法正确的是\n\nA. 甲处洋流常年稳定流动\n\nB. 乙处洋流类型为风海流\n\nC. 乙处表层海水盐度最高\n\nD. 丙处表层等温线更密集\n\n12. 图示海域洋流流向异常持续数月，可能导致\n\nA. 秘鲁渔场捕获鱼量大增\n\nB. 澳大利亚森林火情严重\n\nC. 中南半岛火山喷发频繁\n\nD. 我国南北方降水均增多\n\n\n\n[2025 深圳调研考试]黑海地区年降水量为600—800 mm，周边河流年平均注入淡水量为355亿  $ m^{3} $ 。黑海平均水深为1315 m，仅通过狭窄的马尔马拉海与地中海相连。黑海表层与深层海水密度差异大，被称为“双层海”。下图为黑海周边流域图。据此完成 13—14 题。\n\n<div style=\"text-align: center;\"><img src=\"imgs/img_in_image_box_2581_1476_4004_2454.jpg\" alt=\"Image\" width=\"30%\" /></div>\n\n\n<div style=\"text-align: center;\">山脉河流水域</div>\n\n\n13. 马尔马拉海与黑海的盐度差异及两者间水体交换方式是\n\nA. 马尔马拉海盐度高, 表层海水流向黑海\n\nB. 黑海盐度低, 表层海水流向马尔马拉海\n\nC. 马尔马拉海盐度低, 深层海水流向黑海\n\nD. 黑海盐度高, 深层海水流向马尔马拉海\n\n14. 亚速海比黑海更容易结冰,与之相关性最小的原因是亚速海\n\nA. 盐度更低\n\nB. 水量更少\n\nC. 风浪更大\n\nD. 纬度更高",
+                    "images": {
+                        "imgs/img_in_image_box_285_1134_1980_2074.jpg": "https://pplines-online.bj.bcebos.com/deploy/official/paddleocr/pp-ocr-vl-15//cc4c76d2-8900-4f16-a18d-af4f2b9a982b/markdown_1/imgs/img_in_image_box_285_1134_1980_2074.jpg?authorization=bce-auth-v1%2FALTAKzReLNvew3ySINYJ0fuAMN%2F2026-03-25T03%3A05%3A45Z%2F-1%2F%2Fb988685bb771087cd87ab56f9ad62ce93c96c16b68c9c4686a8e9632dea8ade1",
+                        "imgs/img_in_image_box_361_4007_1914_5815.jpg": "https://pplines-online.bj.bcebos.com/deploy/official/paddleocr/pp-ocr-vl-15//cc4c76d2-8900-4f16-a18d-af4f2b9a982b/markdown_1/imgs/img_in_image_box_361_4007_1914_5815.jpg?authorization=bce-auth-v1%2FALTAKzReLNvew3ySINYJ0fuAMN%2F2026-03-25T03%3A05%3A46Z%2F-1%2F%2F9e3e5b0cd483a0dc527db02ec732980651aaf1b575028b84a51852c81cafa446",
+                        "imgs/img_in_image_box_2581_1476_4004_2454.jpg": "https://pplines-online.bj.bcebos.com/deploy/official/paddleocr/pp-ocr-vl-15//cc4c76d2-8900-4f16-a18d-af4f2b9a982b/markdown_1/imgs/img_in_image_box_2581_1476_4004_2454.jpg?authorization=bce-auth-v1%2FALTAKzReLNvew3ySINYJ0fuAMN%2F2026-03-25T03%3A05%3A46Z%2F-1%2F%2F8c639d7f07fee42f825f2837a6c9bc04eda550fddc342e3af95627809e393279"
+                    }
+                },
+                "outputImages": {
+                    "layout_det_res": "https://pplines-online.bj.bcebos.com/deploy/official/paddleocr/pp-ocr-vl-15//cc4c76d2-8900-4f16-a18d-af4f2b9a982b/layout_det_res_1.jpg?authorization=bce-auth-v1%2FALTAKzReLNvew3ySINYJ0fuAMN%2F2026-03-25T03%3A05%3A50Z%2F-1%2F%2F9697d91d99f6406b82312625424b1182aefb440b56d3ac2d0af3cda4dd86b10d"
+                },
+                "inputImage": "https://pplines-online.bj.bcebos.com/deploy/official/paddleocr/pp-ocr-vl-15//cc4c76d2-8900-4f16-a18d-af4f2b9a982b/input_img_1.jpg?authorization=bce-auth-v1%2FALTAKzReLNvew3ySINYJ0fuAMN%2F2026-03-25T03%3A05%3A50Z%2F-1%2F%2Fba864a7f5df1700fa95447dca3e0b8b62bbc0b04e50ef59234a16dc158277e86"
+            },
+            {
+                "prunedResult": {
+                    "page_count": 4,
+                    "width": 2508,
+                    "height": 2738,
+                    "model_settings": {
+                        "use_doc_preprocessor": false,
+                        "use_layout_detection": true,
+                        "use_chart_recognition": false,
+                        "use_seal_recognition": true,
+                        "use_ocr_for_image_block": false,
+                        "format_block_content": false,
+                        "merge_layout_blocks": true,
+                        "markdown_ignore_labels": [
+                            "header",
+                            "header_image",
+                            "footer",
+                            "footer_image",
+                            "number",
+                            "footnote",
+                            "aside_text"
+                        ],
+                        "return_layout_polygon_points": true
+                    },
+                    "parsing_res_list": [
+                        {
+                            "block_label": "text",
+                            "block_content": "[2025 福州质量检测]下图分别为 1981—2020 年夏季三江源、河湾区(雅鲁藏布江大拐弯处及附近区域)降水偏多年和偏少年垂直剖面上沿  $ 95^{\\circ} $E 的风场分布图, 灰色阴影表示地形, 斜线填充区域代表三江源和河湾区位置(自北向南), 箭头表示气流运动方向。据此完成 15—16 题。",
+                            "block_bbox": [
+                                23,
+                                7,
+                                2136,
+                                744
+                            ],
+                            "block_id": 0,
+                            "block_order": 1,
+                            "group_id": 0,
+                            "global_block_id": 28,
+                            "global_group_id": 28,
+                            "block_polygon_points": [
+                                [
+                                    23.0,
+                                    7.0
+                                ],
+                                [
+                                    2136.0,
+                                    7.0
+                                ],
+                                [
+                                    2136.0,
+                                    744.0
+                                ],
+                                [
+                                    23.0,
+                                    744.0
+                                ]
+                            ]
+                        },
+                        {
+                            "block_label": "chart",
+                            "block_content": "",
+                            "block_bbox": [
+                                307,
+                                754,
+                                1851,
+                                1709
+                            ],
+                            "block_id": 1,
+                            "block_order": null,
+                            "group_id": 1,
+                            "global_block_id": 29,
+                            "global_group_id": 29,
+                            "block_polygon_points": [
+                                [
+                                    307.0,
+                                    754.0
+                                ],
+                                [
+                                    1851.0,
+                                    754.0
+                                ],
+                                [
+                                    1851.0,
+                                    1709.0
+                                ],
+                                [
+                                    307.0,
+                                    1709.0
+                                ]
+                            ]
+                        },
+                        {
+                            "block_label": "chart",
+                            "block_content": "",
+                            "block_bbox": [
+                                298,
+                                1747,
+                                1853,
+                                2684
+                            ],
+                            "block_id": 2,
+                            "block_order": null,
+                            "group_id": 2,
+                            "global_block_id": 30,
+                            "global_group_id": 30,
+                            "block_polygon_points": [
+                                [
+                                    298.0,
+                                    1747.0
+                                ],
+                                [
+                                    1853.0,
+                                    1747.0
+                                ],
+                                [
+                                    1853.0,
+                                    2684.0
+                                ],
+                                [
+                                    298.0,
+                                    2684.0
+                                ]
+                            ]
+                        }
+                    ],
+                    "layout_det_res": {
+                        "boxes": [
+                            {
+                                "cls_id": 22,
+                                "label": "text",
+                                "score": 0.9557867646217346,
+                                "coordinate": [
+                                    23,
+                                    7,
+                                    2136,
+                                    744
+                                ],
+                                "order": 1,
+                                "polygon_points": [
+                                    [
+                                        23.0,
+                                        7.0
+                                    ],
+                                    [
+                                        2136.0,
+                                        7.0
+                                    ],
+                                    [
+                                        2136.0,
+                                        744.0
+                                    ],
+                                    [
+                                        23.0,
+                                        744.0
+                                    ]
+                                ]
+                            },
+                            {
+                                "cls_id": 15,
+                                "label": "inline_formula",
+                                "score": 0.498393177986145,
+                                "coordinate": [
+                                    155,
+                                    379,
+                                    369,
+                                    480
+                                ],
+                                "order": 2,
+                                "polygon_points": [
+                                    [
+                                        155,
+                                        379
+                                    ],
+                                    [
+                                        155,
+                                        479
+                                    ],
+                                    [
+                                        368,
+                                        479
+                                    ],
+                                    [
+                                        368,
+                                        379
+                                    ]
+                                ]
+                            },
+                            {
+                                "cls_id": 3,
+                                "label": "chart",
+                                "score": 0.9416947960853577,
+                                "coordinate": [
+                                    307,
+                                    754,
+                                    1851,
+                                    1709
+                                ],
+                                "order": null,
+                                "polygon_points": [
+                                    [
+                                        307.0,
+                                        754.0
+                                    ],
+                                    [
+                                        1851.0,
+                                        754.0
+                                    ],
+                                    [
+                                        1851.0,
+                                        1709.0
+                                    ],
+                                    [
+                                        307.0,
+                                        1709.0
+                                    ]
+                                ]
+                            },
+                            {
+                                "cls_id": 3,
+                                "label": "chart",
+                                "score": 0.9197794795036316,
+                                "coordinate": [
+                                    298,
+                                    1747,
+                                    1853,
+                                    2684
+                                ],
+                                "order": null,
+                                "polygon_points": [
+                                    [
+                                        298.0,
+                                        1747.0
+                                    ],
+                                    [
+                                        1853.0,
+                                        1747.0
+                                    ],
+                                    [
+                                        1853.0,
+                                        2684.0
+                                    ],
+                                    [
+                                        298.0,
+                                        2684.0
+                                    ]
+                                ]
+                            }
+                        ]
+                    }
+                },
+                "markdown": {
+                    "text": "[2025 福州质量检测]下图分别为 1981—2020 年夏季三江源、河湾区(雅鲁藏布江大拐弯处及附近区域)降水偏多年和偏少年垂直剖面上沿  $ 95^{\\circ} $E 的风场分布图, 灰色阴影表示地形, 斜线填充区域代表三江源和河湾区位置(自北向南), 箭头表示气流运动方向。据此完成 15—16 题。\n\n<div style=\"text-align: center;\"><img src=\"imgs/img_in_chart_box_307_754_1851_1709.jpg\" alt=\"Image\" width=\"61%\" /></div>\n\n\n<div style=\"text-align: center;\"><img src=\"imgs/img_in_chart_box_298_1747_1853_2684.jpg\" alt=\"Image\" width=\"62%\" /></div>\n",
+                    "images": {
+                        "imgs/img_in_chart_box_307_754_1851_1709.jpg": "https://pplines-online.bj.bcebos.com/deploy/official/paddleocr/pp-ocr-vl-15//cc4c76d2-8900-4f16-a18d-af4f2b9a982b/markdown_2/imgs/img_in_chart_box_307_754_1851_1709.jpg?authorization=bce-auth-v1%2FALTAKzReLNvew3ySINYJ0fuAMN%2F2026-03-25T03%3A05%3A50Z%2F-1%2F%2Fe64d12c9738808017c6d56f99a5209c9cac13f5431bf0acb06c91a3d3a0bc37b",
+                        "imgs/img_in_chart_box_298_1747_1853_2684.jpg": "https://pplines-online.bj.bcebos.com/deploy/official/paddleocr/pp-ocr-vl-15//cc4c76d2-8900-4f16-a18d-af4f2b9a982b/markdown_2/imgs/img_in_chart_box_298_1747_1853_2684.jpg?authorization=bce-auth-v1%2FALTAKzReLNvew3ySINYJ0fuAMN%2F2026-03-25T03%3A05%3A50Z%2F-1%2F%2F333cf82605def093a464183522bb5815921cf143773ea78cff60c4ac21225cf7"
+                    }
+                },
+                "outputImages": {
+                    "layout_det_res": "https://pplines-online.bj.bcebos.com/deploy/official/paddleocr/pp-ocr-vl-15//cc4c76d2-8900-4f16-a18d-af4f2b9a982b/layout_det_res_2.jpg?authorization=bce-auth-v1%2FALTAKzReLNvew3ySINYJ0fuAMN%2F2026-03-25T03%3A05%3A51Z%2F-1%2F%2F8b9eb2d9efe31be51fdb897c3e69b932622ac6522ba2d01b3218d7ff2dd295fd"
+                },
+                "inputImage": "https://pplines-online.bj.bcebos.com/deploy/official/paddleocr/pp-ocr-vl-15//cc4c76d2-8900-4f16-a18d-af4f2b9a982b/input_img_2.jpg?authorization=bce-auth-v1%2FALTAKzReLNvew3ySINYJ0fuAMN%2F2026-03-25T03%3A05%3A52Z%2F-1%2F%2Fbfad1e1df765d4be68f34da0850159effe152bcb292dc4b29b3776da5c1b5689"
+            },
+            {
+                "prunedResult": {
+                    "page_count": 4,
+                    "width": 4720,
+                    "height": 6670,
+                    "model_settings": {
+                        "use_doc_preprocessor": false,
+                        "use_layout_detection": true,
+                        "use_chart_recognition": false,
+                        "use_seal_recognition": true,
+                        "use_ocr_for_image_block": false,
+                        "format_block_content": false,
+                        "merge_layout_blocks": true,
+                        "markdown_ignore_labels": [
+                            "header",
+                            "header_image",
+                            "footer",
+                            "footer_image",
+                            "number",
+                            "footnote",
+                            "aside_text"
+                        ],
+                        "return_layout_polygon_points": true
+                    },
+                    "parsing_res_list": [
+                        {
+                            "block_label": "text",
+                            "block_content": "15.与三江源、河湾区降水偏多年份高原内部气流运动状况关系密切的是\nA.太阳辐射强度 B.热力性质差异\nC.地表植被覆盖状况 D.人类活动强度",
+                            "block_bbox": [
+                                364,
+                                107,
+                                2476,
+                                635
+                            ],
+                            "block_id": 0,
+                            "block_order": 1,
+                            "group_id": 0,
+                            "global_block_id": 31,
+                            "global_group_id": 31,
+                            "block_polygon_points": [
+                                [
+                                    364.0,
+                                    107.0
+                                ],
+                                [
+                                    2476.0,
+                                    107.0
+                                ],
+                                [
+                                    2476.0,
+                                    635.0
+                                ],
+                                [
+                                    364.0,
+                                    635.0
+                                ]
+                            ]
+                        },
+                        {
+                            "block_label": "text",
+                            "block_content": "16. 三江源、河湾区出现降水偏多年和偏少年的主要影响因素有\n①高原内气流运动变化 ②东南风势力强弱变化 ③地势的高低起伏变化 ④西南风水汽输送量变化\nA. ①② B. ②③ C. ③④ D. ①④",
+                            "block_bbox": [
+                                367,
+                                660,
+                                2476,
+                                1591
+                            ],
+                            "block_id": 1,
+                            "block_order": 2,
+                            "group_id": 1,
+                            "global_block_id": 32,
+                            "global_group_id": 32,
+                            "block_polygon_points": [
+                                [
+                                    367.0,
+                                    660.0
+                                ],
+                                [
+                                    2476.0,
+                                    660.0
+                                ],
+                                [
+                                    2476.0,
+                                    1591.0
+                                ],
+                                [
+                                    367.0,
+                                    1591.0
+                                ]
+                            ]
+                        },
+                        {
+                            "block_label": "text",
+                            "block_content": "[2025 贵阳适应性考试]我国夏季降水的空间分布与太平洋海水温度有非常密切的关系，而太平洋海水温度变化与厄尔尼诺现象变化密切相关。下图为1965—2022年我国渤海、黄海和东海夏季降水距平与各年尼诺3.4指数(反映赤道太平洋东部海水温度距平变化情况，距平为正值表示发生了厄尔尼诺现象)变化统计图。据此完成17—18题。",
+                            "block_bbox": [
+                                360,
+                                1616,
+                                2473,
+                                2700
+                            ],
+                            "block_id": 2,
+                            "block_order": 3,
+                            "group_id": 2,
+                            "global_block_id": 33,
+                            "global_group_id": 33,
+                            "block_polygon_points": [
+                                [
+                                    360.0,
+                                    1616.0
+                                ],
+                                [
+                                    2473.0,
+                                    1616.0
+                                ],
+                                [
+                                    2473.0,
+                                    2700.0
+                                ],
+                                [
+                                    360.0,
+                                    2700.0
+                                ]
+                            ]
+                        },
+                        {
+                            "block_label": "chart",
+                            "block_content": "",
+                            "block_bbox": [
+                                370,
+                                2742,
+                                2453,
+                                3987
+                            ],
+                            "block_id": 3,
+                            "block_order": null,
+                            "group_id": 3,
+                            "global_block_id": 34,
+                            "global_group_id": 34,
+                            "block_polygon_points": [
+                                [
+                                    370.0,
+                                    2742.0
+                                ],
+                                [
+                                    2453.0,
+                                    2742.0
+                                ],
+                                [
+                                    2453.0,
+                                    3987.0
+                                ],
+                                [
+                                    370.0,
+                                    3987.0
+                                ]
+                            ]
+                        },
+                        {
+                            "block_label": "text",
+                            "block_content": "17. 尼诺 3.4 指数变化引发我国气候变化的主要途径是\nA. 海—气水热交换与传输\nB. 洋流环流传送热量\nC. 冷暖锋锋面天气活动\nD. 气压带风带季节移动",
+                            "block_bbox": [
+                                365,
+                                4017,
+                                2458,
+                                4816
+                            ],
+                            "block_id": 4,
+                            "block_order": 4,
+                            "group_id": 4,
+                            "global_block_id": 35,
+                            "global_group_id": 35,
+                            "block_polygon_points": [
+                                [
+                                    365.0,
+                                    4017.0
+                                ],
+                                [
+                                    2458.0,
+                                    4017.0
+                                ],
+                                [
+                                    2458.0,
+                                    4816.0
+                                ],
+                                [
+                                    365.0,
+                                    4816.0
+                                ]
+                            ]
+                        },
+                        {
+                            "block_label": "text",
+                            "block_content": "18. 尼诺 3.4 指数偏高时,我国渤海、黄海和东海夏季降水距平产生变化的直接原因是\nA. 副热带高气压势力增强\nB. 东南季风势力较弱\nC. 太平洋西部水温偏低\nD. 太平洋东部水温偏高",
+                            "block_bbox": [
+                                364,
+                                4843,
+                                2464,
+                                5644
+                            ],
+                            "block_id": 5,
+                            "block_order": 5,
+                            "group_id": 5,
+                            "global_block_id": 36,
+                            "global_group_id": 36,
+                            "block_polygon_points": [
+                                [
+                                    364.0,
+                                    4843.0
+                                ],
+                                [
+                                    2464.0,
+                                    4843.0
+                                ],
+                                [
+                                    2464.0,
+                                    5644.0
+                                ],
+                                [
+                                    364.0,
+                                    5644.0
+                                ]
+                            ]
+                        },
+                        {
+                            "block_label": "text",
+                            "block_content": "[2025 石家庄摸底检测]1983—1994 年，西班牙东北部蒙特塞尼山区常出现含有大量沙尘的“红雨”现象，其发生频率与降水量存在明显的季节性差异。甲区域(见下图)也有“红雨”现象，但受东地中海气流和北大西洋低压影响，“红雨”现象发生频率不高。研究发现，这些沙尘主要来自下图中的 W 区域。据此完成 19—20 题。\n19. 推测蒙特塞尼山区“红雨”现象频发的季节和原因分别是\nA. 夏季 山区昼夜温差大\nB. 春季 受锋面气旋影响\nC. 夏季 副热带高压南移\nD. 春季 地中海水温回升",
+                            "block_bbox": [
+                                359,
+                                5670,
+                                2472,
+                                6607
+                            ],
+                            "block_id": 6,
+                            "block_order": 6,
+                            "group_id": 6,
+                            "global_block_id": 37,
+                            "global_group_id": 37,
+                            "block_polygon_points": [
+                                [
+                                    359.0,
+                                    5670.0
+                                ],
+                                [
+                                    2472.0,
+                                    5670.0
+                                ],
+                                [
+                                    2472.0,
+                                    6607.0
+                                ],
+                                [
+                                    359.0,
+                                    6607.0
+                                ]
+                            ]
+                        },
+                        {
+                            "block_label": "text",
+                            "block_content": "",
+                            "block_bbox": [
+                                2534,
+                                1666,
+                                4631,
+                                2400
+                            ],
+                            "block_id": 7,
+                            "block_order": 7,
+                            "group_id": 6,
+                            "global_block_id": 38,
+                            "global_group_id": 38,
+                            "block_polygon_points": [
+                                [
+                                    2534.0,
+                                    1666.0
+                                ],
+                                [
+                                    4631.0,
+                                    1666.0
+                                ],
+                                [
+                                    4631.0,
+                                    2400.0
+                                ],
+                                [
+                                    2534.0,
+                                    2400.0
+                                ]
+                            ]
+                        },
+                        {
+                            "block_label": "image",
+                            "block_content": "",
+                            "block_bbox": [
+                                2598,
+                                213,
+                                4428,
+                                1526
+                            ],
+                            "block_id": 8,
+                            "block_order": null,
+                            "group_id": 8,
+                            "global_block_id": 39,
+                            "global_group_id": 39,
+                            "block_polygon_points": [
+                                [
+                                    2598.0,
+                                    213.0
+                                ],
+                                [
+                                    4428.0,
+                                    213.0
+                                ],
+                                [
+                                    4428.0,
+                                    1526.0
+                                ],
+                                [
+                                    2598.0,
+                                    1526.0
+                                ]
+                            ]
+                        },
+                        {
+                            "block_label": "text",
+                            "block_content": "20. 与甲区域相比,蒙特塞尼山区“红雨”现象发生频率较高,主要原因是该山区\n①地形抬升,增加降水②距海较近,水汽充足\n③盛行西风强度更强 ④沙尘输入更加稳定\nA. ①② B. ①④ C. ②③ D. ③④",
+                            "block_bbox": [
+                                2526,
+                                2418,
+                                4622,
+                                3030
+                            ],
+                            "block_id": 9,
+                            "block_order": 8,
+                            "group_id": 9,
+                            "global_block_id": 40,
+                            "global_group_id": 40,
+                            "block_polygon_points": [
+                                [
+                                    2526.0,
+                                    2418.0
+                                ],
+                                [
+                                    4622.0,
+                                    2418.0
+                                ],
+                                [
+                                    4622.0,
+                                    3030.0
+                                ],
+                                [
+                                    2526.0,
+                                    3030.0
+                                ]
+                            ]
+                        },
+                        {
+                            "block_label": "text",
+                            "block_content": "[2025 洛阳质量检测]热流通量,也被称为热流密度,是单位时间内通过单位面积的热能,具有方向性。在存在温度差的情况下,热量会自发地从高温区域向低温区域传递,这种传递可以通过导热、对流和辐射等方式进行。下图是太平洋局部地区多年平均冬季热流通量分布图。据此完成 21—23 题。",
+                            "block_bbox": [
+                                2520,
+                                3044,
+                                4631,
+                                3910
+                            ],
+                            "block_id": 10,
+                            "block_order": 9,
+                            "group_id": 10,
+                            "global_block_id": 41,
+                            "global_group_id": 41,
+                            "block_polygon_points": [
+                                [
+                                    2520.0,
+                                    3044.0
+                                ],
+                                [
+                                    4631.0,
+                                    3044.0
+                                ],
+                                [
+                                    4631.0,
+                                    3910.0
+                                ],
+                                [
+                                    2520.0,
+                                    3910.0
+                                ]
+                            ]
+                        },
+                        {
+                            "block_label": "chart",
+                            "block_content": "",
+                            "block_bbox": [
+                                2809,
+                                3936,
+                                4384,
+                                4815
+                            ],
+                            "block_id": 11,
+                            "block_order": null,
+                            "group_id": 11,
+                            "global_block_id": 42,
+                            "global_group_id": 42,
+                            "block_polygon_points": [
+                                [
+                                    2809.0,
+                                    3936.0
+                                ],
+                                [
+                                    4384.0,
+                                    3936.0
+                                ],
+                                [
+                                    4384.0,
+                                    4815.0
+                                ],
+                                [
+                                    2809.0,
+                                    4815.0
+                                ]
+                            ]
+                        },
+                        {
+                            "block_label": "text",
+                            "block_content": "21. 根据图示海域平均热流通量可知,该海域\nA. 大气向海水传导的热量多\nB. 大气辐射量大于海水辐射量\nC. 大气受对流增温作用显著\nD. 大气对海水有增温作用",
+                            "block_bbox": [
+                                2514,
+                                4844,
+                                4444,
+                                5447
+                            ],
+                            "block_id": 12,
+                            "block_order": 10,
+                            "group_id": 12,
+                            "global_block_id": 43,
+                            "global_group_id": 43,
+                            "block_polygon_points": [
+                                [
+                                    2514.0,
+                                    4844.0
+                                ],
+                                [
+                                    4444.0,
+                                    4844.0
+                                ],
+                                [
+                                    4444.0,
+                                    5447.0
+                                ],
+                                [
+                                    2514.0,
+                                    5447.0
+                                ]
+                            ]
+                        },
+                        {
+                            "block_label": "text",
+                            "block_content": "22. 影响图中斜线阴影区平均热流通量的主要因素是\nA. 洋流    B. 季风    C. 光照    D. 气温",
+                            "block_bbox": [
+                                2517,
+                                5467,
+                                4628,
+                                5824
+                            ],
+                            "block_id": 13,
+                            "block_order": 11,
+                            "group_id": 13,
+                            "global_block_id": 44,
+                            "global_group_id": 44,
+                            "block_polygon_points": [
+                                [
+                                    2517.0,
+                                    5467.0
+                                ],
+                                [
+                                    4628.0,
+                                    5467.0
+                                ],
+                                [
+                                    4628.0,
+                                    5824.0
+                                ],
+                                [
+                                    2517.0,
+                                    5824.0
+                                ]
+                            ]
+                        },
+                        {
+                            "block_label": "text",
+                            "block_content": "23. 推测与冬季相比, 夏季图示海域平均热流通量等值线的分布特点有\n①数值基本转为正值 ②同纬度, 近海数值小于远洋 ③最值中心向北移动 ④同经度, 低纬数值大于中纬\nA. ①② B. ①③ C. ②④ D. ③④",
+                            "block_bbox": [
+                                2520,
+                                5838,
+                                4633,
+                                6585
+                            ],
+                            "block_id": 14,
+                            "block_order": 12,
+                            "group_id": 14,
+                            "global_block_id": 45,
+                            "global_group_id": 45,
+                            "block_polygon_points": [
+                                [
+                                    2520.0,
+                                    5838.0
+                                ],
+                                [
+                                    4633.0,
+                                    5838.0
+                                ],
+                                [
+                                    4633.0,
+                                    6585.0
+                                ],
+                                [
+                                    2520.0,
+                                    6585.0
+                                ]
+                            ]
+                        }
+                    ],
+                    "layout_det_res": {
+                        "boxes": [
+                            {
+                                "cls_id": 22,
+                                "label": "text",
+                                "score": 0.9373722672462463,
+                                "coordinate": [
+                                    364,
+                                    107,
+                                    2476,
+                                    635
+                                ],
+                                "order": 1,
+                                "polygon_points": [
+                                    [
+                                        364.0,
+                                        107.0
+                                    ],
+                                    [
+                                        2476.0,
+                                        107.0
+                                    ],
+                                    [
+                                        2476.0,
+                                        635.0
+                                    ],
+                                    [
+                                        364.0,
+                                        635.0
+                                    ]
+                                ]
+                            },
+                            {
+                                "cls_id": 22,
+                                "label": "text",
+                                "score": 0.9554049372673035,
+                                "coordinate": [
+                                    367,
+                                    660,
+                                    2476,
+                                    1591
+                                ],
+                                "order": 2,
+                                "polygon_points": [
+                                    [
+                                        367.0,
+                                        660.0
+                                    ],
+                                    [
+                                        2476.0,
+                                        660.0
+                                    ],
+                                    [
+                                        2476.0,
+                                        1591.0
+                                    ],
+                                    [
+                                        367.0,
+                                        1591.0
+                                    ]
+                                ]
+                            },
+                            {
+                                "cls_id": 22,
+                                "label": "text",
+                                "score": 0.9613608717918396,
+                                "coordinate": [
+                                    360,
+                                    1616,
+                                    2473,
+                                    2700
+                                ],
+                                "order": 3,
+                                "polygon_points": [
+                                    [
+                                        360.0,
+                                        1616.0
+                                    ],
+                                    [
+                                        2473.0,
+                                        1616.0
+                                    ],
+                                    [
+                                        2473.0,
+                                        2700.0
+                                    ],
+                                    [
+                                        360.0,
+                                        2700.0
+                                    ]
+                                ]
+                            },
+                            {
+                                "cls_id": 3,
+                                "label": "chart",
+                                "score": 0.9538126587867737,
+                                "coordinate": [
+                                    370,
+                                    2742,
+                                    2453,
+                                    3987
+                                ],
+                                "order": null,
+                                "polygon_points": [
+                                    [
+                                        370.0,
+                                        2742.0
+                                    ],
+                                    [
+                                        2453.0,
+                                        2742.0
+                                    ],
+                                    [
+                                        2453.0,
+                                        3987.0
+                                    ],
+                                    [
+                                        370.0,
+                                        3987.0
+                                    ]
+                                ]
+                            },
+                            {
+                                "cls_id": 22,
+                                "label": "text",
+                                "score": 0.948295533657074,
+                                "coordinate": [
+                                    365,
+                                    4017,
+                                    2458,
+                                    4816
+                                ],
+                                "order": 4,
+                                "polygon_points": [
+                                    [
+                                        365.0,
+                                        4017.0
+                                    ],
+                                    [
+                                        2458.0,
+                                        4017.0
+                                    ],
+                                    [
+                                        2458.0,
+                                        4816.0
+                                    ],
+                                    [
+                                        365.0,
+                                        4816.0
+                                    ]
+                                ]
+                            },
+                            {
+                                "cls_id": 22,
+                                "label": "text",
+                                "score": 0.9420993328094482,
+                                "coordinate": [
+                                    364,
+                                    4843,
+                                    2464,
+                                    5644
+                                ],
+                                "order": 5,
+                                "polygon_points": [
+                                    [
+                                        364.0,
+                                        4843.0
+                                    ],
+                                    [
+                                        2464.0,
+                                        4843.0
+                                    ],
+                                    [
+                                        2464.0,
+                                        5644.0
+                                    ],
+                                    [
+                                        364.0,
+                                        5644.0
+                                    ]
+                                ]
+                            },
+                            {
+                                "cls_id": 22,
+                                "label": "text",
+                                "score": 0.9418522715568542,
+                                "coordinate": [
+                                    359,
+                                    5670,
+                                    2472,
+                                    6607
+                                ],
+                                "order": 6,
+                                "polygon_points": [
+                                    [
+                                        359.0,
+                                        5670.0
+                                    ],
+                                    [
+                                        2472.0,
+                                        5670.0
+                                    ],
+                                    [
+                                        2472.0,
+                                        6607.0
+                                    ],
+                                    [
+                                        359.0,
+                                        6607.0
+                                    ]
+                                ]
+                            },
+                            {
+                                "cls_id": 14,
+                                "label": "image",
+                                "score": 0.9585015177726746,
+                                "coordinate": [
+                                    2598,
+                                    213,
+                                    4428,
+                                    1526
+                                ],
+                                "order": null,
+                                "polygon_points": [
+                                    [
+                                        2598.0,
+                                        213.0
+                                    ],
+                                    [
+                                        4428.0,
+                                        213.0
+                                    ],
+                                    [
+                                        4428.0,
+                                        1526.0
+                                    ],
+                                    [
+                                        2598.0,
+                                        1526.0
+                                    ]
+                                ]
+                            },
+                            {
+                                "cls_id": 22,
+                                "label": "text",
+                                "score": 0.9459076523780823,
+                                "coordinate": [
+                                    2534,
+                                    1666,
+                                    4631,
+                                    2400
+                                ],
+                                "order": 7,
+                                "polygon_points": [
+                                    [
+                                        2534.0,
+                                        1666.0
+                                    ],
+                                    [
+                                        4631.0,
+                                        1666.0
+                                    ],
+                                    [
+                                        4631.0,
+                                        2400.0
+                                    ],
+                                    [
+                                        2534.0,
+                                        2400.0
+                                    ]
+                                ]
+                            },
+                            {
+                                "cls_id": 22,
+                                "label": "text",
+                                "score": 0.9413363933563232,
+                                "coordinate": [
+                                    2526,
+                                    2418,
+                                    4622,
+                                    3030
+                                ],
+                                "order": 8,
+                                "polygon_points": [
+                                    [
+                                        2526.0,
+                                        2418.0
+                                    ],
+                                    [
+                                        4622.0,
+                                        2418.0
+                                    ],
+                                    [
+                                        4622.0,
+                                        3030.0
+                                    ],
+                                    [
+                                        2526.0,
+                                        3030.0
+                                    ]
+                                ]
+                            },
+                            {
+                                "cls_id": 22,
+                                "label": "text",
+                                "score": 0.9565138220787048,
+                                "coordinate": [
+                                    2520,
+                                    3044,
+                                    4631,
+                                    3910
+                                ],
+                                "order": 9,
+                                "polygon_points": [
+                                    [
+                                        2520.0,
+                                        3044.0
+                                    ],
+                                    [
+                                        4631.0,
+                                        3044.0
+                                    ],
+                                    [
+                                        4631.0,
+                                        3910.0
+                                    ],
+                                    [
+                                        2520.0,
+                                        3910.0
+                                    ]
+                                ]
+                            },
+                            {
+                                "cls_id": 3,
+                                "label": "chart",
+                                "score": 0.6691511273384094,
+                                "coordinate": [
+                                    2809,
+                                    3936,
+                                    4384,
+                                    4815
+                                ],
+                                "order": null,
+                                "polygon_points": [
+                                    [
+                                        2809.0,
+                                        3936.0
+                                    ],
+                                    [
+                                        4384.0,
+                                        3936.0
+                                    ],
+                                    [
+                                        4384.0,
+                                        4815.0
+                                    ],
+                                    [
+                                        2809.0,
+                                        4815.0
+                                    ]
+                                ]
+                            },
+                            {
+                                "cls_id": 22,
+                                "label": "text",
+                                "score": 0.9285510182380676,
+                                "coordinate": [
+                                    2514,
+                                    4844,
+                                    4444,
+                                    5447
+                                ],
+                                "order": 10,
+                                "polygon_points": [
+                                    [
+                                        2514.0,
+                                        4844.0
+                                    ],
+                                    [
+                                        4444.0,
+                                        4844.0
+                                    ],
+                                    [
+                                        4444.0,
+                                        5447.0
+                                    ],
+                                    [
+                                        2514.0,
+                                        5447.0
+                                    ]
+                                ]
+                            },
+                            {
+                                "cls_id": 22,
+                                "label": "text",
+                                "score": 0.9329294562339783,
+                                "coordinate": [
+                                    2517,
+                                    5467,
+                                    4628,
+                                    5824
+                                ],
+                                "order": 11,
+                                "polygon_points": [
+                                    [
+                                        2517.0,
+                                        5467.0
+                                    ],
+                                    [
+                                        4628.0,
+                                        5467.0
+                                    ],
+                                    [
+                                        4628.0,
+                                        5824.0
+                                    ],
+                                    [
+                                        2517.0,
+                                        5824.0
+                                    ]
+                                ]
+                            },
+                            {
+                                "cls_id": 22,
+                                "label": "text",
+                                "score": 0.9506291151046753,
+                                "coordinate": [
+                                    2520,
+                                    5838,
+                                    4633,
+                                    6585
+                                ],
+                                "order": 12,
+                                "polygon_points": [
+                                    [
+                                        2520.0,
+                                        5838.0
+                                    ],
+                                    [
+                                        4633.0,
+                                        5838.0
+                                    ],
+                                    [
+                                        4633.0,
+                                        6585.0
+                                    ],
+                                    [
+                                        2520.0,
+                                        6585.0
+                                    ]
+                                ]
+                            }
+                        ]
+                    }
+                },
+                "markdown": {
+                    "text": "15.与三江源、河湾区降水偏多年份高原内部气流运动状况关系密切的是\n\nA.太阳辐射强度 B.热力性质差异\n\nC.地表植被覆盖状况 D.人类活动强度\n\n16. 三江源、河湾区出现降水偏多年和偏少年的主要影响因素有\n\n①高原内气流运动变化 ②东南风势力强弱变化 ③地势的高低起伏变化 ④西南风水汽输送量变化\n\nA. ①② B. ②③ C. ③④ D. ①④\n\n[2025 贵阳适应性考试]我国夏季降水的空间分布与太平洋海水温度有非常密切的关系，而太平洋海水温度变化与厄尔尼诺现象变化密切相关。下图为1965—2022年我国渤海、黄海和东海夏季降水距平与各年尼诺3.4指数(反映赤道太平洋东部海水温度距平变化情况，距平为正值表示发生了厄尔尼诺现象)变化统计图。据此完成17—18题。\n\n<div style=\"text-align: center;\"><img src=\"imgs/img_in_chart_box_370_2742_2453_3987.jpg\" alt=\"Image\" width=\"44%\" /></div>\n\n\n17. 尼诺 3.4 指数变化引发我国气候变化的主要途径是\n\nA. 海—气水热交换与传输\n\nB. 洋流环流传送热量\n\nC. 冷暖锋锋面天气活动\n\nD. 气压带风带季节移动\n\n18. 尼诺 3.4 指数偏高时,我国渤海、黄海和东海夏季降水距平产生变化的直接原因是\n\nA. 副热带高气压势力增强\n\nB. 东南季风势力较弱\n\nC. 太平洋西部水温偏低\n\nD. 太平洋东部水温偏高\n\n[2025 石家庄摸底检测]1983—1994 年，西班牙东北部蒙特塞尼山区常出现含有大量沙尘的“红雨”现象，其发生频率与降水量存在明显的季节性差异。甲区域(见下图)也有“红雨”现象，但受东地中海气流和北大西洋低压影响，“红雨”现象发生频率不高。研究发现，这些沙尘主要来自下图中的 W 区域。据此完成 19—20 题。\n\n19. 推测蒙特塞尼山区“红雨”现象频发的季节和原因分别是\n\nA. 夏季 山区昼夜温差大\n\nB. 春季 受锋面气旋影响\n\nC. 夏季 副热带高压南移\n\nD. 春季 地中海水温回升\n\n\n\n<div style=\"text-align: center;\"><img src=\"imgs/img_in_image_box_2598_213_4428_1526.jpg\" alt=\"Image\" width=\"38%\" /></div>\n\n\n20. 与甲区域相比,蒙特塞尼山区“红雨”现象发生频率较高,主要原因是该山区\n\n①地形抬升,增加降水②距海较近,水汽充足\n\n③盛行西风强度更强 ④沙尘输入更加稳定\n\nA. ①② B. ①④ C. ②③ D. ③④\n\n[2025 洛阳质量检测]热流通量,也被称为热流密度,是单位时间内通过单位面积的热能,具有方向性。在存在温度差的情况下,热量会自发地从高温区域向低温区域传递,这种传递可以通过导热、对流和辐射等方式进行。下图是太平洋局部地区多年平均冬季热流通量分布图。据此完成 21—23 题。\n\n<div style=\"text-align: center;\"><img src=\"imgs/img_in_chart_box_2809_3936_4384_4815.jpg\" alt=\"Image\" width=\"33%\" /></div>\n\n\n21. 根据图示海域平均热流通量可知,该海域\n\nA. 大气向海水传导的热量多\n\nB. 大气辐射量大于海水辐射量\n\nC. 大气受对流增温作用显著\n\nD. 大气对海水有增温作用\n\n22. 影响图中斜线阴影区平均热流通量的主要因素是\n\nA. 洋流    B. 季风    C. 光照    D. 气温\n\n23. 推测与冬季相比, 夏季图示海域平均热流通量等值线的分布特点有\n\n①数值基本转为正值 ②同纬度, 近海数值小于远洋 ③最值中心向北移动 ④同经度, 低纬数值大于中纬\n\nA. ①② B. ①③ C. ②④ D. ③④",
+                    "images": {
+                        "imgs/img_in_chart_box_370_2742_2453_3987.jpg": "https://pplines-online.bj.bcebos.com/deploy/official/paddleocr/pp-ocr-vl-15//cc4c76d2-8900-4f16-a18d-af4f2b9a982b/markdown_3/imgs/img_in_chart_box_370_2742_2453_3987.jpg?authorization=bce-auth-v1%2FALTAKzReLNvew3ySINYJ0fuAMN%2F2026-03-25T03%3A05%3A52Z%2F-1%2F%2Fba0f9306d2d7138dfe206963ab326926cb7dc7dbb5c38cb438d840fce0dcf4da",
+                        "imgs/img_in_image_box_2598_213_4428_1526.jpg": "https://pplines-online.bj.bcebos.com/deploy/official/paddleocr/pp-ocr-vl-15//cc4c76d2-8900-4f16-a18d-af4f2b9a982b/markdown_3/imgs/img_in_image_box_2598_213_4428_1526.jpg?authorization=bce-auth-v1%2FALTAKzReLNvew3ySINYJ0fuAMN%2F2026-03-25T03%3A05%3A53Z%2F-1%2F%2F1b76b105484269735c039999ab6c8b184efa18f658c374bd9fae8152cb3fdb97",
+                        "imgs/img_in_chart_box_2809_3936_4384_4815.jpg": "https://pplines-online.bj.bcebos.com/deploy/official/paddleocr/pp-ocr-vl-15//cc4c76d2-8900-4f16-a18d-af4f2b9a982b/markdown_3/imgs/img_in_chart_box_2809_3936_4384_4815.jpg?authorization=bce-auth-v1%2FALTAKzReLNvew3ySINYJ0fuAMN%2F2026-03-25T03%3A05%3A53Z%2F-1%2F%2F548d07c1fd29e67ced1dfc11be79753c3512e399561230b38b0b259191405992"
+                    }
+                },
+                "outputImages": {
+                    "layout_det_res": "https://pplines-online.bj.bcebos.com/deploy/official/paddleocr/pp-ocr-vl-15//cc4c76d2-8900-4f16-a18d-af4f2b9a982b/layout_det_res_3.jpg?authorization=bce-auth-v1%2FALTAKzReLNvew3ySINYJ0fuAMN%2F2026-03-25T03%3A05%3A57Z%2F-1%2F%2Fe763ece79907906f0c596a9fc7fd3b4952ae9a944aed16c712b9d3e0abd72376"
+                },
+                "inputImage": "https://pplines-online.bj.bcebos.com/deploy/official/paddleocr/pp-ocr-vl-15//cc4c76d2-8900-4f16-a18d-af4f2b9a982b/input_img_3.jpg?authorization=bce-auth-v1%2FALTAKzReLNvew3ySINYJ0fuAMN%2F2026-03-25T03%3A05%3A58Z%2F-1%2F%2Fe34db7c3438ff493aebb308b8db9cf2125e7632bbe313b21a29f15334711ab13"
+            }
+        ],
+        "dataInfo": {
+            "numPages": 4,
+            "pages": [
+                {
+                    "width": 4670,
+                    "height": 6638
+                },
+                {
+                    "width": 4720,
+                    "height": 6670
+                },
+                {
+                    "width": 2508,
+                    "height": 2738
+                },
+                {
+                    "width": 4720,
+                    "height": 6670
+                }
+            ],
+            "type": "pdf"
+        },
+        "preprocessedImages": [
+            "https://pplines-online.bj.bcebos.com/deploy/official/paddleocr/pp-ocr-vl-15//cc4c76d2-8900-4f16-a18d-af4f2b9a982b/preprocessed_img_0.jpg?authorization=bce-auth-v1%2FALTAKzReLNvew3ySINYJ0fuAMN%2F2026-03-25T03%3A05%3A45Z%2F-1%2F%2F71adb0b969f2bcdef9b59e353258fee0ead2c7c0d2847fa7ac000d71d48e5edb",
+            "https://pplines-online.bj.bcebos.com/deploy/official/paddleocr/pp-ocr-vl-15//cc4c76d2-8900-4f16-a18d-af4f2b9a982b/preprocessed_img_1.jpg?authorization=bce-auth-v1%2FALTAKzReLNvew3ySINYJ0fuAMN%2F2026-03-25T03%3A05%3A50Z%2F-1%2F%2F6db33e9cfefa49f93caae0b93a97e373a5c65ffb8f5acc35f9d15688bc2a0470",
+            "https://pplines-online.bj.bcebos.com/deploy/official/paddleocr/pp-ocr-vl-15//cc4c76d2-8900-4f16-a18d-af4f2b9a982b/preprocessed_img_2.jpg?authorization=bce-auth-v1%2FALTAKzReLNvew3ySINYJ0fuAMN%2F2026-03-25T03%3A05%3A52Z%2F-1%2F%2F979592e205579f0802b5fa538a3019365cdc650057dcc5a5a103cb9427388f45",
+            "https://pplines-online.bj.bcebos.com/deploy/official/paddleocr/pp-ocr-vl-15//cc4c76d2-8900-4f16-a18d-af4f2b9a982b/preprocessed_img_3.jpg?authorization=bce-auth-v1%2FALTAKzReLNvew3ySINYJ0fuAMN%2F2026-03-25T03%3A05%3A58Z%2F-1%2F%2F3112439127558d57f9d151a2acc8483356b1fbb99faa3800abea50d1313487a5"
+        ]
+    },
+    "errorCode": 0,
+    "errorMsg": "Success"
+}

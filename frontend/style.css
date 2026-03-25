@@ -15,6 +15,8 @@ button:disabled{opacity:.6;cursor:not-allowed}
 .log{flex:0 0 auto;height:30vh;min-height:120px;max-height:240px;white-space:pre-wrap;background:#fafafa;border:1px solid #ececec;border-radius:8px;padding:10px;overflow:auto;font-size:12px}
 .step2{display:flex;flex-direction:column;gap:6px}
 .step2Row{display:flex;gap:8px;align-items:center}
+.step3{display:flex;flex-direction:column;gap:6px}
+.step3Row{display:flex;gap:8px;align-items:center}
 select{flex:1;min-width:0;padding:8px 10px;border:1px solid #d0d0d0;border-radius:8px;background:#fff;font-size:13px}
 .right{padding:16px;display:flex;flex-direction:column;gap:10px;min-height:0}
 .rightTitle{display:flex;align-items:center;justify-content:space-between}

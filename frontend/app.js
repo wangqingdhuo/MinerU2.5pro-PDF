@@ -482,6 +482,7 @@ async function pollResult(jobId) {
       $("#copy").disabled = !$("#output").value;
       updateSplitEnabled();
       updatePreviewEnabled();
+      updateMarkEnabled();
       return;
     }
   }
@@ -549,6 +550,7 @@ async function openHistory() {
             $("#copy").disabled = !$("#output").value;
             updateSplitEnabled();
             updatePreviewEnabled();
+            updateMarkEnabled();
             hideHistoryModal();
           } catch (e) {
             log(String(e && e.message ? e.message : e));
@@ -572,6 +574,7 @@ async function openHistory() {
           $("#copy").disabled = !$("#output").value;
           updateSplitEnabled();
           updatePreviewEnabled();
+          updateMarkEnabled();
           hideHistoryModal();
         } catch (e) {
           log(String(e && e.message ? e.message : e));
@@ -591,6 +594,8 @@ async function runOcrPath(path) {
   $("#meta").textContent = "";
   $("#copy").disabled = true;
   $("#log").textContent = "";
+  cachedResData = null;
+  updateMarkEnabled();
 
   setStatus("submitting");
   log("提交任务");
@@ -606,6 +611,8 @@ async function runOcrFile(file) {
   $("#meta").textContent = "";
   $("#copy").disabled = true;
   $("#log").textContent = "";
+  cachedResData = null;
+  updateMarkEnabled();
 
   setStatus("uploading");
   log("上传文件并提交任务");
@@ -756,3 +763,214 @@ $("#historyClose").addEventListener("click", hideHistoryModal);
 $("#historyModal").addEventListener("click", (e) => {
   if (e.target === $("#historyModal")) hideHistoryModal();
 });
+
+// 标记功能
+let cachedResData = null;
+
+function updateMarkEnabled() {
+  const markEl = $("#mark");
+  if (!markEl) return;
+  markEl.disabled = !currentOutputDir;
+}
+
+async function loadResData() {
+  if (cachedResData) return cachedResData;
+  const jobIdPath = getJobIdPath();
+  if (!jobIdPath) {
+    log("无法获取任务路径");
+    return null;
+  }
+  try {
+    const resp = await fetch(API_BASE + "/output/" + jobIdPath + "/res.txt");
+    if (!resp.ok) throw new Error("failed to load res.txt");
+    const text = await resp.text();
+    cachedResData = JSON.parse(text);
+    return cachedResData;
+  } catch (e) {
+    log("加载res.txt失败: " + e.message);
+    return null;
+  }
+}
+
+function fuzzyMatch(text, query) {
+  if (!text || !query) return false;
+  text = text.toLowerCase();
+  query = query.toLowerCase();
+  if (text.includes(query)) return true;
+  const queryChars = query.split("");
+  let idx = 0;
+  for (const ch of text) {
+    if (ch === queryChars[idx]) {
+      idx++;
+      if (idx === queryChars.length) return true;
+    }
+  }
+  return idx === queryChars.length;
+}
+
+async function highlightBlocks(blocks, query) {
+  const jobIdPath = getJobIdPath();
+  if (!jobIdPath) {
+    alert("无法获取任务路径");
+    return;
+  }
+  
+  const matchedBlocks = [];
+  for (const block of blocks) {
+    const content = block.block_content || "";
+    if (fuzzyMatch(content, query)) {
+      matchedBlocks.push(block);
+    }
+  }
+  
+  if (matchedBlocks.length === 0) {
+    alert("未找到匹配的内容");
+    return;
+  }
+  
+  log(`找到 ${matchedBlocks.length} 个匹配项`);
+  
+  try {
+    const resp = await fetch(API_BASE + "/api/history/assets?id=" + encodeURIComponent(jobIdPath));
+    const data = await resp.json();
+    const files = (data && data.files) || [];
+    const imageFile = files.find(f => f.type === "image");
+    const pdfFile = files.find(f => f.type === "pdf");
+    const sourceFile = pdfFile || imageFile;
+    
+    if (!sourceFile) {
+      alert("未找到原始图片");
+      return;
+    }
+    
+    const imgUrl = API_BASE + "/" + sourceFile.url;
+    const img = new Image();
+    img.crossOrigin = "anonymous";
+    
+    await new Promise((resolve, reject) => {
+      img.onload = resolve;
+      img.onerror = reject;
+      img.src = imgUrl;
+    });
+    
+    const canvas = document.createElement("canvas");
+    canvas.width = img.width;
+    canvas.height = img.height;
+    const ctx = canvas.getContext("2d");
+    ctx.drawImage(img, 0, 0);
+    
+    ctx.globalAlpha = 0.4;
+    ctx.fillStyle = "#ffff00";
+    
+    for (const block of matchedBlocks) {
+      const bbox = block.block_bbox;
+      if (bbox && bbox.length === 4) {
+        ctx.fillRect(bbox[0], bbox[1], bbox[2] - bbox[0], bbox[3] - bbox[1]);
+      }
+    }
+    
+    ctx.globalAlpha = 1;
+    ctx.strokeStyle = "#ff0000";
+    ctx.lineWidth = 3;
+    
+    for (const block of matchedBlocks) {
+      const bbox = block.block_bbox;
+      if (bbox && bbox.length === 4) {
+        ctx.strokeRect(bbox[0], bbox[1], bbox[2] - bbox[0], bbox[3] - bbox[1]);
+      }
+    }
+    
+    const highlightWin = window.open("", "_blank");
+    if (!highlightWin) {
+      alert("弹出窗口被拦截，请允许弹出窗口。");
+      return;
+    }
+    
+    const dataUrl = canvas.toDataURL("image/jpeg", 0.95);
+    highlightWin.document.write(`<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <title>标记结果 - PaddleDev</title>
+  <style>
+    body{margin:0;display:flex;justify-content:center;align-items:center;min-height:100vh;background:#333}
+    img{max-width:100%;max-height:100vh;display:block;margin:auto}
+  </style>
+</head>
+<body>
+  <img src="${dataUrl}" alt="highlighted">
+</body>
+</html>`);
+    highlightWin.document.close();
+    
+  } catch (e) {
+    log("标记失败: " + e.message);
+    alert("标记失败: " + e.message);
+  }
+}
+
+function getJobIdPath() {
+  if (!currentOutputDir) return null;
+  const rel = String(currentOutputDir).replace(/\\/g, "/");
+  const idx = rel.toLowerCase().indexOf("/paddlelog/");
+  if (idx >= 0) {
+    const tail = rel.slice(idx + "/paddlelog/".length);
+    const segs = tail.split("/").filter(Boolean);
+    if (segs.length >= 2) return `${segs[0]}/${segs[1]}`;
+  }
+  const segs = rel.split("/").filter(Boolean);
+  if (segs.length >= 2) {
+    const last = segs[segs.length - 1];
+    const prev = segs[segs.length - 2];
+    return `${prev}/${last}`;
+  }
+  return null;
+}
+
+async function doMark() {
+  const query = ($("#markText").value || "").trim();
+  if (!query) {
+    alert("请输入要标记的文字");
+    return;
+  }
+  
+  $("#mark").disabled = true;
+  setStatus("marking");
+  log(`标记: "${query}"`);
+  
+  try {
+    const resData = await loadResData();
+    if (!resData) {
+      throw new Error("无法加载res.txt");
+    }
+    
+    const blocks = [];
+    const results = resData.result?.layoutParsingResults || [];
+    for (const result of results) {
+      const parsingResList = result.prunedResult?.parsing_res_list || [];
+      for (const item of parsingResList) {
+        if (item.block_content) {
+          blocks.push(item);
+        }
+      }
+    }
+    
+    if (blocks.length === 0) {
+      throw new Error("res.txt中没有找到block_content");
+    }
+    
+    await highlightBlocks(blocks, query);
+    
+    setStatus("done");
+    log("标记完成");
+  } catch (e) {
+    setStatus("error");
+    log("标记失败: " + e.message);
+  } finally {
+    updateMarkEnabled();
+  }
+}
+
+$("#markText").addEventListener("input", updateMarkEnabled);
+$("#mark").addEventListener("click", doMark);
+updateMarkEnabled();

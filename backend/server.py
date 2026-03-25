@@ -585,6 +585,10 @@ def _run_ocr(local_job_id: str, path: str | None, uploaded: tuple[str, bytes] | 
         base_dir = os.path.join(OUTPUT_ROOT, folder_name, local_job_id)
         os.makedirs(base_dir, exist_ok=True)
         base_name = os.path.splitext(folder_name)[0] or folder_name
+        
+        # 保存接口返回的response为res.txt
+        res_txt_path = os.path.join(base_dir, "res.txt")
+        _write_text(res_txt_path, jsonl_resp.text)
 
         # 尝试备份原始上传文件
         try:

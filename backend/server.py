@@ -5,6 +5,7 @@ import threading
 import time
 import uuid
 import mimetypes
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from urllib.parse import parse_qs, urlparse, unquote
 
@@ -13,6 +14,9 @@ import requests
 # 服务器配置
 HOST = "0.0.0.0"
 PORT = 8099
+
+# OCR 并发配置
+MAX_CONCURRENT_OCR = int(os.environ.get("MAX_CONCURRENT_OCR") or "5")
 
 # PaddleOCR API 配置
 JOB_URL = "https://paddleocr.aistudio-app.com/api/v2/ocr/jobs"
@@ -60,6 +64,9 @@ OPTIONAL_PAYLOAD = {
     "restructurePages": True,
 }
 
+# 参考答案文件夹名称列表
+ANSWER_FOLDER_NAMES = ["参考答案", "答案", "answer", "Answer", "ANSWER", "答案解析"]
+
 # 全局任务状态追踪
 _jobs_lock = threading.Lock()
 _jobs: dict[str, dict] = {} # OCR 任务
@@ -101,15 +108,18 @@ def _coze_auth_headers() -> dict[str, str]:
     return {"Authorization": f"Bearer {COZE_TOKEN}"}
 
 
-def _coze_run_workflow_sync(user_input: str) -> str:
+def _coze_run_workflow_sync(user_input: str, subject: str, has_answer: bool) -> str:
     """同步调用 Coze 工作流"""
     if not COZE_WORKFLOW_ID:
         raise RuntimeError("missing COZE_WORKFLOW_ID")
+    # 将学科拼接在文本上方
+    full_input = f"{subject}\n{user_input}"
     payload = {
         "workflow_id": COZE_WORKFLOW_ID,
         "is_async": True,
-        "parameters": {"USER_INPUT": user_input},
+        "parameters": {"USER_INPUT": full_input, "hasanswer": has_answer},
     }
+    print(f"[COZE] has_answer={has_answer}, payload={json.dumps(payload, ensure_ascii=False)[:500]}...")
     resp = _request(
         "POST",
         COZE_RUN_URL,
@@ -189,21 +199,24 @@ def _update_coze_job(job_id: str, patch: dict) -> None:
         job.update(patch)
 
 
-def _run_coze(local_job_id: str, user_input: str, output_dir: str | None) -> None:
+def _run_coze(local_job_id: str, user_input: str, output_dir: str | None, has_answer: bool = False, subject: str = "") -> None:
     """后台运行 Coze 任务的线程函数"""
     try:
         _update_coze_job(local_job_id, {"state": "submitting"})
-        execute_id = _coze_run_workflow_sync(user_input)
+        execute_id = _coze_run_workflow_sync(user_input, subject, has_answer)
         _update_coze_job(local_job_id, {"state": "polling", "executeId": execute_id})
         final_data = _coze_poll_result_sync(execute_id, local_job_id)
         saved_path = None
         # 如果提供了输出目录，则保存结果到本地文件
+        print(f"[COZE] output_dir={output_dir}, is_dir={os.path.isdir(output_dir) if output_dir else False}")
         if output_dir and os.path.isdir(output_dir) and _is_under_output_root(output_dir):
             try:
                 split_path = os.path.join(output_dir, "split.txt")
                 _write_text(split_path, final_data)
                 saved_path = split_path
-            except Exception:
+                print(f"[COZE] 保存分割结果到: {split_path}")
+            except Exception as e:
+                print(f"[COZE] 保存失败: {e}")
                 saved_path = None
         _update_coze_job(
             local_job_id,
@@ -211,6 +224,7 @@ def _run_coze(local_job_id: str, user_input: str, output_dir: str | None) -> Non
                 "state": "done",
                 "result": {"text": final_data},
                 "savedPath": saved_path,
+                "hasAnswer": has_answer,
                 "finishedAt": _now_ms(),
             },
         )
@@ -220,7 +234,7 @@ def _run_coze(local_job_id: str, user_input: str, output_dir: str | None) -> Non
         )
 
 
-def _create_coze_job(user_input: str, output_dir: str | None) -> str:
+def _create_coze_job(user_input: str, output_dir: str | None, has_answer: bool = False, subject: str = "") -> str:
     """创建一个新的 Coze 任务并启动后台线程"""
     job_id = uuid.uuid4().hex
     with _coze_jobs_lock:
@@ -229,8 +243,10 @@ def _create_coze_job(user_input: str, output_dir: str | None) -> str:
             "state": "created",
             "createdAt": _now_ms(),
             "outputDir": output_dir,
+            "hasAnswer": has_answer,
+            "subject": subject,
         }
-    t = threading.Thread(target=_run_coze, args=(job_id, user_input, output_dir), daemon=True)
+    t = threading.Thread(target=_run_coze, args=(job_id, user_input, output_dir, has_answer, subject), daemon=True)
     t.start()
     return job_id
 
@@ -383,12 +399,29 @@ def _history_scan(limit: int = 200) -> list[dict]:
                 mtime_ms = int(os.path.getmtime(ocr_txt) * 1000)
             except Exception:
                 mtime_ms = 0
+            
+            # 读取 hasAnswer
+            has_answer = False
+            try:
+                meta_file = os.path.join(job_dir, "meta.json")
+                if os.path.exists(meta_file):
+                    with open(meta_file, "r", encoding="utf-8") as f:
+                        meta_data = json.load(f)
+                        has_answer = meta_data.get("hasAnswer", False)
+                else:
+                    # 兼容旧数据：检查参考答案目录
+                    answer_dir = os.path.join(job_dir, "参考答案")
+                    has_answer = os.path.isdir(answer_dir)
+            except Exception:
+                pass
+            
             items.append(
                 {
                     "id": f"{folder_name}/{job_id}",
                     "folderName": folder_name,
                     "jobId": job_id,
                     "hasSplit": os.path.exists(split_txt) and os.path.isfile(split_txt),
+                    "hasAnswer": has_answer,
                     "updatedAt": mtime_ms,
                 }
             )
@@ -397,7 +430,44 @@ def _history_scan(limit: int = 200) -> list[dict]:
     return items[: max(1, int(limit))]
 
 
-def _submit_job_sync(path: str) -> str:
+def _is_answer_folder(name: str) -> bool:
+    """检查文件夹名称是否为参考答案文件夹"""
+    return name in ANSWER_FOLDER_NAMES
+
+
+def _get_all_images_from_folder(folder_path: str) -> list[str]:
+    """获取文件夹下所有 jpg 图片，按文件名自然排序"""
+    images = []
+    image_extensions = {".jpg", ".jpeg", ".png", ".bmp", ".webp", ".tif", ".tiff"}
+    try:
+        for fname in os.listdir(folder_path):
+            ext = os.path.splitext(fname)[1].lower()
+            if ext in image_extensions:
+                fpath = os.path.join(folder_path, fname)
+                if os.path.isfile(fpath):
+                    images.append(fpath)
+    except Exception:
+        pass
+    # 按文件名排序
+    return sorted(images, key=os.path.basename)
+
+
+def _get_answer_folder(folder_path: str) -> str | None:
+    """获取参考答案文件夹路径"""
+    for name in ANSWER_FOLDER_NAMES:
+        answer_path = os.path.join(folder_path, name)
+        if os.path.isdir(answer_path):
+            return answer_path
+    return None
+
+
+def _extract_page_from_filename(filename: str) -> str:
+    """从文件名中提取页面信息，格式如 p_页面_015.095950.jpg"""
+    basename = os.path.splitext(filename)[0]
+    return basename
+
+
+def _submit_job_sync(path: str, is_folder: bool = False) -> str:
     """同步提交 OCR 任务（通过 URL 或本地文件路径）"""
     headers = {"Authorization": f"bearer {TOKEN}"}
     if path.startswith("http"):
@@ -482,17 +552,27 @@ def _poll_job_sync(job_id: str, local_job_id: str) -> str:
 
 
 def _process_and_save_jsonl(
-    jsonl_text: str, base_dir: str, base_name: str, folder_name: str, local_job_id: str
+    jsonl_text: str, base_dir: str, base_name: str, folder_name: str, local_job_id: str,
+    img_name: str | None = None, page_index: int = 0
 ) -> dict:
     """处理并保存 OCR 结果（JSONL格式），下载图片并替换路径"""
-    output_dir = os.path.join(base_dir, "output")
-    imgs_dir = os.path.join(output_dir, "imgs")
-    os.makedirs(imgs_dir, exist_ok=True)
+    # txt 目录
+    txt_base_dir = os.path.join(base_dir, "txt")
+    os.makedirs(txt_base_dir, exist_ok=True)
+
+    # imgs 目录（OCR API返回的图片）
+    output_dir = os.path.join(base_dir, "output", "imgs")
+    os.makedirs(output_dir, exist_ok=True)
+
+    # 保存每个图片的response
+    if img_name:
+        res_file_path = os.path.join(txt_base_dir, f"res_{img_name}.txt")
+        _write_text(res_file_path, jsonl_text)
 
     all_md: list[str] = []
     all_txt: list[str] = []
     used_img_names: set[str] = set()
-    page_num = 0
+    page_num = page_index
 
     for line in jsonl_text.splitlines():
         line = line.strip()
@@ -508,7 +588,7 @@ def _process_and_save_jsonl(
             for img_path, img_url in (res["markdown"].get("images") or {}).items():
                 img_ext = os.path.splitext(img_path)[1].lower() or ".jpg"
                 new_img_name = _build_img_name(img_ext, used_img_names)
-                full_img_path = os.path.join(imgs_dir, new_img_name)
+                full_img_path = os.path.join(output_dir, new_img_name)
                 try:
                     # 下载远程图片到本地
                     img_resp = _request("GET", img_url, timeout=60)
@@ -529,7 +609,7 @@ def _process_and_save_jsonl(
             all_md.append(md_replaced)
 
             # 保存单页 Markdown
-            md_filename = os.path.join(base_dir, f"{base_name}_{page_num}.md")
+            md_filename = os.path.join(txt_base_dir, f"{base_name}_{page_num}.md")
             _write_text(md_filename, md_replaced)
 
             # 替换 TXT 版本中的路径（用于前端显示）
@@ -539,82 +619,444 @@ def _process_and_save_jsonl(
             all_txt.append(txt_replaced)
 
             # 保存单页 TXT
-            txt_filename = os.path.join(base_dir, f"{base_name}_{page_num}.txt")
+            txt_filename = os.path.join(txt_base_dir, f"{base_name}_{page_num}.txt")
             _write_text(txt_filename, txt_replaced)
 
             page_num += 1
 
-    # 合并所有页面
-    merged_md = "\n\n".join(all_md)
-    merged_txt = "\n\n".join(all_txt)
-    _write_text(os.path.join(base_dir, "ocr.md"), merged_md)
-    _write_text(os.path.join(base_dir, "ocr.txt"), merged_txt)
-
-    return {"pages": page_num, "markdown": merged_md, "txt": merged_txt}
+    return {"pages": page_num - page_index, "markdown_parts": all_md, "txt_parts": all_txt}
 
 
-def _run_ocr(local_job_id: str, path: str | None, uploaded: tuple[str, bytes] | None) -> None:
-    """后台运行 OCR 任务的线程主逻辑"""
+def _process_single_image(img_path: str, base_dir: str, folder_name: str, local_job_id: str) -> dict | None:
+    """处理单张图片，返回结果或None（失败时）"""
+    img_basename = os.path.basename(img_path)
     try:
-        _update_job(local_job_id, {"state": "submitting"})
-        # 1. 提交任务
-        if uploaded is not None:
-            filename, content = uploaded
-            remote_job_id = _submit_job_bytes_sync(filename, content)
-        else:
-            remote_job_id = _submit_job_sync(path or "")
+        # 提交 OCR 任务
+        remote_job_id = _submit_job_sync(img_path)
         
-        # 2. 轮询状态
-        _update_job(local_job_id, {"state": "polling", "remoteJobId": remote_job_id})
+        # 轮询状态
         json_url = _poll_job_sync(remote_job_id, local_job_id)
         
-        # 3. 下载结果
-        _update_job(local_job_id, {"state": "downloading", "jsonUrl": json_url})
+        # 下载结果
         jsonl_resp = _request("GET", json_url, timeout=300)
         jsonl_resp.raise_for_status()
         
-        # 4. 准备本地保存目录
-        folder_name = ""
-        if uploaded is not None:
-            folder_name = _safe_folder_name(os.path.basename(uploaded[0]))
-        elif path:
-            folder_name = _safe_folder_name(os.path.basename(path))
-        else:
-            folder_name = _safe_folder_name("job")
-
-        base_dir = os.path.join(OUTPUT_ROOT, folder_name, local_job_id)
-        os.makedirs(base_dir, exist_ok=True)
-        base_name = os.path.splitext(folder_name)[0] or folder_name
-        
-        # 保存接口返回的response为res.txt
-        res_txt_path = os.path.join(base_dir, "res.txt")
-        _write_text(res_txt_path, jsonl_resp.text)
-
-        # 尝试备份原始上传文件
-        try:
-            if uploaded is not None:
-                up_name = os.path.basename(uploaded[0]) or "upload.bin"
-                _write_bytes(os.path.join(base_dir, up_name), uploaded[1])
-            elif path and not path.startswith("http") and os.path.exists(path):
-                try:
-                    with open(path, "rb") as rf:
-                        _write_bytes(os.path.join(base_dir, os.path.basename(path)), rf.read())
-                except Exception:
-                    pass
-        except Exception:
-            pass
-
-        # 5. 处理并保存最终结果
-        _update_job(local_job_id, {"state": "saving", "outputDir": base_dir})
+        # 处理并保存（使用图片名称作为文件名，避免覆盖）
+        base_name = os.path.splitext(img_basename)[0]
         saved = _process_and_save_jsonl(
             jsonl_resp.text,
             base_dir=base_dir,
             base_name=base_name,
             folder_name=folder_name,
             local_job_id=local_job_id,
+            img_name=img_basename,
+            page_index=0  # 每个图片独立保存，page_index从0开始
         )
         
-        # 6. 更新任务为完成
+        return {
+            "success": True,
+            "img_basename": img_basename,
+            "img_path": img_path,
+            "markdown_parts": saved["markdown_parts"],
+            "txt_parts": saved["txt_parts"],
+            "pages": saved["pages"]
+        }
+    except Exception as e:
+        return {
+            "success": False,
+            "img_basename": img_basename,
+            "error": str(e)
+        }
+
+
+def _process_folder_sync(folder_path: str, base_dir: str, folder_name: str, local_job_id: str) -> dict:
+    """处理文件夹中的所有图片（并发），返回合并后的文本"""
+    all_md: list[str] = []
+    all_txt: list[str] = []
+    total_pages = 0
+    has_answer = False
+    failed_count = 0
+
+    # 获取所有图片
+    images = _get_all_images_from_folder(folder_path)
+    total_images = len(images)
+
+    # 创建目录结构
+    # - imgs/ : 原图片
+    # - pdfs/ : PDF文件
+    # - txt/ : 识别的txt文件
+    # - 参考答案/ : 参考答案目录（内含imgs、txt、pdfs）
+    imgs_dir = os.path.join(base_dir, "imgs")
+    pdf_dir = os.path.join(base_dir, "pdfs")
+    txt_dir = os.path.join(base_dir, "txt")
+    os.makedirs(imgs_dir, exist_ok=True)
+    os.makedirs(pdf_dir, exist_ok=True)
+    os.makedirs(txt_dir, exist_ok=True)
+
+    # 复制原图片
+    for img_path in images:
+        img_basename = os.path.basename(img_path)
+        try:
+            dest_path = os.path.join(imgs_dir, img_basename)
+            if not os.path.exists(dest_path):
+                with open(img_path, "rb") as src:
+                    _write_bytes(dest_path, src.read())
+        except Exception as e:
+            log(f"复制原图片 {img_basename} 失败: {e}")
+
+    # 复制 PDF 文件
+    _copy_pdfs_from_folder(folder_path, pdf_dir)
+
+    if total_images == 0:
+        raise RuntimeError(f"文件夹中没有找到图片: {folder_path}")
+
+    log_msg = f"找到 {total_images} 张图片，开始并发处理（最大 {MAX_CONCURRENT_OCR} 并发）"
+    _update_job(local_job_id, {"log": log_msg})
+
+    # 使用 ThreadPoolExecutor 并发处理
+    processed_results = []
+    with ThreadPoolExecutor(max_workers=MAX_CONCURRENT_OCR) as executor:
+        # 提交所有任务
+        future_to_img = {
+            executor.submit(_process_single_image, img_path, base_dir, folder_name, local_job_id): img_path
+            for img_path in images
+        }
+
+        completed = 0
+        for future in as_completed(future_to_img):
+            completed += 1
+            img_path = future_to_img[future]
+            img_basename = os.path.basename(img_path)
+
+            try:
+                result = future.result()
+                if result and result.get("success"):
+                    processed_results.append(result)
+                else:
+                    failed_count += 1
+                    error_msg = result.get("error", "未知错误") if result else "任务执行失败"
+                    _update_job(local_job_id, {
+                        "log": f"处理图片 {img_basename} 失败: {error_msg}"
+                    })
+            except Exception as e:
+                failed_count += 1
+                _update_job(local_job_id, {
+                    "log": f"处理图片 {img_basename} 失败: {str(e)}"
+                })
+
+            # 更新进度
+            _update_job(local_job_id, {
+                "state": "processing_image",
+                "progress": {
+                    "completed": completed,
+                    "total": total_images,
+                    "failed": failed_count
+                }
+            })
+
+    # 等待所有正文图片处理完成后再合并
+    log_msg = f"所有正文图片识别完成，共 {len(processed_results)} 张成功，开始合并文本..."
+    _update_job(local_job_id, {"log": log_msg})
+
+    # 按原图片顺序排序结果
+    # 先按文件名排序以获得正确的顺序
+    sorted_images = sorted(images, key=os.path.basename)
+    image_order = {os.path.basename(p): i for i, p in enumerate(sorted_images)}
+    processed_results.sort(key=lambda x: image_order.get(x["img_basename"], 999))
+
+    # 组装正文文本（按顺序）
+    for result in processed_results:
+        all_md.extend(result["markdown_parts"])
+        all_txt.extend(result["txt_parts"])
+        total_pages += result["pages"]
+
+    # 处理参考答案文件夹
+    answer_folder = _get_answer_folder(folder_path)
+    answer_md_parts = []
+    answer_txt_parts = []
+
+    if answer_folder:
+        has_answer = True
+        log_msg = f"找到参考答案文件夹"
+        _update_job(local_job_id, {"log": log_msg})
+
+        # 创建参考答案目录结构
+        answer_imgs_dir = os.path.join(base_dir, "参考答案", "imgs")
+        answer_pdfs_dir = os.path.join(base_dir, "参考答案", "pdfs")
+        answer_txt_dir = os.path.join(base_dir, "参考答案", "txt")
+        os.makedirs(answer_imgs_dir, exist_ok=True)
+        os.makedirs(answer_pdfs_dir, exist_ok=True)
+        os.makedirs(answer_txt_dir, exist_ok=True)
+
+        # 复制参考答案图片
+        answer_images = _get_all_images_from_folder(answer_folder)
+        for img_path in answer_images:
+            img_basename = os.path.basename(img_path)
+            try:
+                dest_path = os.path.join(answer_imgs_dir, img_basename)
+                if not os.path.exists(dest_path):
+                    with open(img_path, "rb") as src:
+                        _write_bytes(dest_path, src.read())
+            except Exception:
+                pass
+
+        # 复制参考答案PDF
+        _copy_pdfs_from_folder(answer_folder, answer_pdfs_dir)
+
+        # 并发处理参考答案图片
+        answer_processed = []
+        with ThreadPoolExecutor(max_workers=MAX_CONCURRENT_OCR) as executor:
+            future_to_img = {
+                executor.submit(_process_single_image, img_path, os.path.join(base_dir, "参考答案"), folder_name, local_job_id): img_path
+                for img_path in answer_images
+            }
+
+            for future in as_completed(future_to_img):
+                try:
+                    result = future.result()
+                    if result and result.get("success"):
+                        answer_processed.append(result)
+                except Exception as e:
+                    _update_job(local_job_id, {
+                        "log": f"处理参考答案 {os.path.basename(future_to_img[future])} 失败: {str(e)}"
+                    })
+
+        # 按参考答案图片原顺序排序
+        sorted_answer_images = sorted(answer_images, key=os.path.basename)
+        answer_order = {os.path.basename(p): i for i, p in enumerate(sorted_answer_images)}
+        answer_processed.sort(key=lambda x: answer_order.get(x["img_basename"], 999))
+
+        # 等待所有参考答案图片处理完成后再合并
+        log_msg = f"所有参考答案图片识别完成，共 {len(answer_processed)} 张成功，开始合并..."
+        _update_job(local_job_id, {"log": log_msg})
+
+        # 按顺序收集参考答案文本
+        for result in answer_processed:
+            answer_md_parts.extend(result["markdown_parts"])
+            answer_txt_parts.extend(result["txt_parts"])
+
+    # 最后合并：原文 + 参考答案标识 + 参考答案内容
+    if has_answer:
+        all_txt.append("\n\n=====参考答案=====\n\n")
+        all_md.append("\n\n=====参考答案=====\n\n")
+        all_txt.extend(answer_txt_parts)
+        all_md.extend(answer_md_parts)
+
+    # 合并所有页面并保存
+    log_msg = "开始合并保存最终文本..."
+    _update_job(local_job_id, {"log": log_msg})
+    merged_md = "\n\n".join(all_md)
+    merged_txt = "\n\n".join(all_txt)
+    _write_text(os.path.join(base_dir, "ocr.md"), merged_md)
+    _write_text(os.path.join(base_dir, "ocr.txt"), merged_txt)
+    
+    # 保存元数据文件（包含 hasAnswer）
+    import json
+    meta_file = os.path.join(base_dir, "meta.json")
+    meta_data = {
+        "hasAnswer": has_answer,
+        "pages": total_pages,
+        "failedCount": failed_count,
+        "finishedAt": _now_ms(),
+    }
+    _write_text(meta_file, json.dumps(meta_data, ensure_ascii=False, indent=2))
+
+    log_msg = f"处理完成：{len(images)} 张正文图片，{failed_count} 张失败"
+    _update_job(local_job_id, {"log": log_msg})
+
+    return {
+        "pages": total_pages,
+        "markdown": merged_md,
+        "txt": merged_txt,
+        "hasAnswer": has_answer,
+        "failedCount": failed_count
+    }
+
+
+def _copy_pdfs_from_folder(folder_path: str, dest_dir: str) -> list[str]:
+    """复制文件夹中的所有 PDF 到目标目录"""
+    copied = []
+    try:
+        for fname in os.listdir(folder_path):
+            fpath = os.path.join(folder_path, fname)
+            if os.path.isfile(fpath) and fname.lower().endswith(".pdf"):
+                dest_path = os.path.join(dest_dir, fname)
+                try:
+                    with open(fpath, "rb") as src:
+                        _write_bytes(dest_path, src.read())
+                    copied.append(fname)
+                except Exception:
+                    pass
+    except Exception:
+        pass
+    return copied
+
+
+def _parse_multipart_folder_upload(content_type: str, raw: bytes) -> tuple[str, dict[str, bytes]]:
+    """解析 multipart/form-data 格式的上传文件夹，返回 (folderName, {relativePath: content})"""
+    m = re.search(r"boundary=(?P<b>[^;]+)", content_type, flags=re.IGNORECASE)
+    if not m:
+        raise ValueError("missing boundary")
+    boundary = m.group("b").strip().strip('"')
+    if not boundary:
+        raise ValueError("missing boundary")
+    delimiter = b"--" + boundary.encode("utf-8", errors="ignore")
+    
+    folder_name = "upload"
+    files: dict[str, bytes] = {}
+    
+    for part in raw.split(delimiter):
+        part = part.strip(b"\r\n")
+        if not part or part == b"--":
+            continue
+        if part.endswith(b"--"):
+            part = part[:-2].strip(b"\r\n")
+        header_blob, sep, body = part.partition(b"\r\n\r\n")
+        if not sep:
+            continue
+        header_text = header_blob.decode("utf-8", errors="replace")
+        
+        # 解析 Content-Disposition
+        cd_line = ""
+        for line in header_text.split("\r\n"):
+            if line.lower().startswith("content-disposition:"):
+                cd_line = line
+                break
+        
+        if not cd_line:
+            continue
+        
+        # 解析字段名
+        name_match = re.search(r'name="([^"]+)"', cd_line)
+        if not name_match:
+            continue
+        field_name = name_match.group(1)
+        
+        if field_name == "folderName":
+            # 文件夹名称
+            folder_name = body.decode("utf-8", errors="replace").strip()
+            if body.endswith(b"\r\n"):
+                folder_name = body[:-2].decode("utf-8", errors="replace").strip()
+        elif field_name == "files":
+            # 文件
+            filename_match = re.search(r'filename="([^"]+)"', cd_line)
+            if filename_match:
+                filename = filename_match.group(1)
+                if body.endswith(b"\r\n"):
+                    body = body[:-2]
+                files[filename] = body
+    
+    return folder_name, files
+
+
+def _create_job_upload_folder(handler) -> str:
+    """处理上传的文件夹并创建 OCR 任务"""
+    content_type = handler.headers.get("Content-Type") or ""
+    length = int(handler.headers.get("Content-Length") or "0")
+    raw = handler.rfile.read(length) if length > 0 else b""
+    
+    folder_name, files = _parse_multipart_folder_upload(content_type, raw)
+    
+    # 创建临时目录
+    import tempfile
+    import shutil
+    temp_dir = tempfile.mkdtemp()
+    
+    try:
+        # 将上传的文件保存到临时目录
+        saved_files = []
+        for rel_path, content in files.items():
+            # 解析相对路径
+            parts = rel_path.replace("\\", "/").split("/")
+            if len(parts) > 1:
+                # 有子目录
+                subdir = os.path.join(temp_dir, parts[0])
+                os.makedirs(subdir, exist_ok=True)
+                file_path = os.path.join(subdir, "/".join(parts[1:]))
+            else:
+                file_path = os.path.join(temp_dir, rel_path)
+            
+            # 确保目录存在
+            os.makedirs(os.path.dirname(file_path), exist_ok=True)
+            
+            with open(file_path, "wb") as f:
+                f.write(content)
+            saved_files.append(file_path)
+        
+        # 获取真正的文件夹路径（第一级子目录）
+        first_file = saved_files[0] if saved_files else None
+        if first_file:
+            # 检查是否是直接文件还是子目录中的文件
+            parts = first_file.replace("\\", "/").split("/")
+            # 假设所有文件都在同一文件夹下
+            if len(parts) > 1:
+                temp_folder = parts[-2]
+            else:
+                temp_folder = folder_name
+        else:
+            temp_folder = folder_name
+        
+        # 创建 job
+        local_job_id = uuid.uuid4().hex
+        with _jobs_lock:
+            _jobs[local_job_id] = {
+                "jobId": local_job_id,
+                "state": "created",
+                "createdAt": _now_ms(),
+                "path": temp_dir,
+                "isFolder": True,
+                "folderName": folder_name,
+            }
+        
+        # 在后台线程中处理
+        t = threading.Thread(target=_run_ocr_from_uploaded_folder, args=(local_job_id, temp_dir, folder_name), daemon=True)
+        t.start()
+        return local_job_id
+        
+    except Exception:
+        # 清理临时目录
+        try:
+            shutil.rmtree(temp_dir)
+        except Exception:
+            pass
+        raise
+
+
+def _run_ocr_from_uploaded_folder(local_job_id: str, temp_dir: str, folder_name: str) -> None:
+    """处理上传的文件夹"""
+    try:
+        _update_job(local_job_id, {"state": "submitting"})
+        
+        # 找临时目录下的实际文件夹
+        actual_folder = temp_dir
+        try:
+            entries = os.listdir(temp_dir)
+            if len(entries) == 1 and os.path.isdir(os.path.join(temp_dir, entries[0])):
+                actual_folder = os.path.join(temp_dir, entries[0])
+        except Exception:
+            pass
+        
+        safe_folder_name = _safe_folder_name(folder_name)
+        base_dir = os.path.join(OUTPUT_ROOT, safe_folder_name, local_job_id)
+        os.makedirs(base_dir, exist_ok=True)
+        
+        # 检查是否有参考答案
+        has_answer = _get_answer_folder(actual_folder) is not None
+        
+        _update_job(local_job_id, {
+            "state": "processing_folder",
+            "outputDir": base_dir,
+            "folderName": folder_name,
+            "hasAnswer": has_answer
+        })
+        
+        saved = _process_folder_sync(
+            folder_path=actual_folder,
+            base_dir=base_dir,
+            folder_name=safe_folder_name,
+            local_job_id=local_job_id
+        )
+        
         _update_job(
             local_job_id,
             {
@@ -623,10 +1065,151 @@ def _run_ocr(local_job_id: str, path: str | None, uploaded: tuple[str, bytes] | 
                     "text": saved["txt"],
                     "pages": saved["pages"],
                     "outputDir": base_dir,
+                    "hasAnswer": saved.get("hasAnswer", False),
+                    "folderName": saved.get("folderName", folder_name)
                 },
                 "finishedAt": _now_ms(),
             },
         )
+    except Exception as e:
+        _update_job(
+            local_job_id,
+            {"state": "failed", "error": str(e), "finishedAt": _now_ms()},
+        )
+    finally:
+        # 清理临时目录
+        try:
+            import shutil
+            shutil.rmtree(temp_dir)
+        except Exception:
+            pass
+
+
+def _run_ocr(local_job_id: str, path: str | None, uploaded: tuple[str, bytes] | None) -> None:
+    """后台运行 OCR 任务的线程主逻辑"""
+    try:
+        _update_job(local_job_id, {"state": "submitting"})
+        
+        # 判断是否为文件夹
+        is_folder = path and os.path.isdir(path)
+        
+        if is_folder:
+            # 文件夹处理模式
+            folder_name = os.path.basename(path.rstrip(os.path.sep)) or "folder"
+            safe_folder_name = _safe_folder_name(folder_name)
+            base_dir = os.path.join(OUTPUT_ROOT, safe_folder_name, local_job_id)
+            os.makedirs(base_dir, exist_ok=True)
+            
+            # 检查是否有参考答案
+            has_answer = _get_answer_folder(path) is not None
+            
+            _update_job(local_job_id, {
+                "state": "processing_folder",
+                "outputDir": base_dir,
+                "folderName": folder_name,
+                "hasAnswer": has_answer
+            })
+            
+            saved = _process_folder_sync(
+                folder_path=path,
+                base_dir=base_dir,
+                folder_name=safe_folder_name,
+                local_job_id=local_job_id
+            )
+            
+            _update_job(
+                local_job_id,
+                {
+                    "state": "done",
+                    "result": {
+                        "text": saved["txt"],
+                        "pages": saved["pages"],
+                        "outputDir": base_dir,
+                        "hasAnswer": saved.get("hasAnswer", False),
+                        "folderName": saved.get("folderName", folder_name)
+                    },
+                    "finishedAt": _now_ms(),
+                },
+            )
+        else:
+            # 单文件处理模式（原有逻辑）
+            # 1. 提交任务
+            if uploaded is not None:
+                filename, content = uploaded
+                remote_job_id = _submit_job_bytes_sync(filename, content)
+            else:
+                remote_job_id = _submit_job_sync(path or "")
+            
+            # 2. 轮询状态
+            _update_job(local_job_id, {"state": "polling", "remoteJobId": remote_job_id})
+            json_url = _poll_job_sync(remote_job_id, local_job_id)
+            
+            # 3. 下载结果
+            _update_job(local_job_id, {"state": "downloading", "jsonUrl": json_url})
+            jsonl_resp = _request("GET", json_url, timeout=300)
+            jsonl_resp.raise_for_status()
+            
+            # 4. 准备本地保存目录
+            folder_name = ""
+            if uploaded is not None:
+                folder_name = _safe_folder_name(os.path.basename(uploaded[0]))
+            elif path:
+                folder_name = _safe_folder_name(os.path.basename(path))
+            else:
+                folder_name = _safe_folder_name("job")
+
+            base_dir = os.path.join(OUTPUT_ROOT, folder_name, local_job_id)
+            os.makedirs(base_dir, exist_ok=True)
+            base_name = os.path.splitext(folder_name)[0] or folder_name
+            
+            # 保存接口返回的response为res.txt
+            res_txt_path = os.path.join(base_dir, "res.txt")
+            _write_text(res_txt_path, jsonl_resp.text)
+
+            # 尝试备份原始上传文件
+            try:
+                if uploaded is not None:
+                    up_name = os.path.basename(uploaded[0]) or "upload.bin"
+                    _write_bytes(os.path.join(base_dir, up_name), uploaded[1])
+                elif path and not path.startswith("http") and os.path.exists(path):
+                    try:
+                        with open(path, "rb") as rf:
+                            _write_bytes(os.path.join(base_dir, os.path.basename(path)), rf.read())
+                    except Exception:
+                        pass
+            except Exception:
+                pass
+
+            # 5. 处理并保存最终结果
+            _update_job(local_job_id, {"state": "saving", "outputDir": base_dir})
+            saved = _process_and_save_jsonl(
+                jsonl_resp.text,
+                base_dir=base_dir,
+                base_name=base_name,
+                folder_name=folder_name,
+                local_job_id=local_job_id,
+            )
+            
+            # 合并所有页面
+            merged_md = "\n\n".join(saved["markdown_parts"])
+            merged_txt = "\n\n".join(saved["txt_parts"])
+            _write_text(os.path.join(base_dir, "ocr.md"), merged_md)
+            _write_text(os.path.join(base_dir, "ocr.txt"), merged_txt)
+            
+            # 6. 更新任务为完成
+            _update_job(
+                local_job_id,
+                {
+                    "state": "done",
+                    "result": {
+                        "text": merged_txt,
+                        "pages": saved["pages"],
+                        "outputDir": base_dir,
+                        "hasAnswer": False
+                    },
+                    "finishedAt": _now_ms(),
+                },
+            )
     except Exception as e:
         _update_job(
             local_job_id,
@@ -646,12 +1229,14 @@ def _update_job(job_id: str, patch: dict) -> None:
 def _create_job(path: str) -> str:
     """创建一个基于路径/URL的 OCR 任务"""
     local_job_id = uuid.uuid4().hex
+    is_folder = os.path.isdir(path)
     with _jobs_lock:
         _jobs[local_job_id] = {
             "jobId": local_job_id,
             "state": "created",
             "createdAt": _now_ms(),
             "path": path,
+            "isFolder": is_folder,
         }
     t = threading.Thread(target=_run_ocr, args=(local_job_id, path, None), daemon=True)
     t.start()
@@ -764,7 +1349,7 @@ class Handler(BaseHTTPRequestHandler):
                 self._send(200, _json_bytes({"items": items}))
                 return
 
-            # 获取某个任务关联的所有素材（图片、PDF）
+            # 获取某个任务关联的所有素材（图片、PDF、res文件等）
             if parsed.path == "/api/history/assets":
                 qs = parse_qs(parsed.query or "")
                 item_id = (qs.get("id") or [""])[0].strip()
@@ -781,19 +1366,76 @@ class Handler(BaseHTTPRequestHandler):
                 if not os.path.isdir(job_dir) or not _is_under_output_root(job_dir):
                     self._send(404, _json_bytes({"error": "not_found"}))
                     return
-                allow_exts = {".pdf", ".png", ".jpg", ".jpeg", ".bmp", ".webp", ".tif", ".tiff"}
+
+                allow_img_exts = {".png", ".jpg", ".jpeg", ".bmp", ".webp", ".tif", ".tiff"}
+                allow_pdf_exts = {".pdf"}
+                allow_res_exts = {".txt"}
                 files = []
-                try:
-                    for name in os.listdir(job_dir):
-                        _, ext = os.path.splitext(name)
-                        if ext.lower() in allow_exts:
-                            fpath = os.path.join(job_dir, name)
+
+                def scan_directory(directory, prefix=""):
+                    """递归扫描目录"""
+                    try:
+                        for name in os.listdir(directory):
+                            fpath = os.path.join(directory, name)
+                            if os.path.isdir(fpath):
+                                # 跳过 output 目录（单独处理）
+                                if name != "output":
+                                    sub_prefix = prefix + name + "/" if prefix else name + "/"
+                                    scan_directory(fpath, sub_prefix)
+                            elif os.path.isfile(fpath):
+                                _, ext = os.path.splitext(name)
+                                ext = ext.lower()
+                                if ext in allow_img_exts:
+                                    rel_path = prefix + name if prefix else name
+                                    # url_path 包含完整路径，name 只返回文件名（不含前缀目录）
+                                    url_path = f"output/{folder_name}/{job_id}/{rel_path}"
+                                    files.append({
+                                        "name": name,  # 只返回文件名，方便前端匹配
+                                        "url": url_path,
+                                        "type": "image"
+                                    })
+                                elif ext in allow_pdf_exts:
+                                    rel_path = prefix + name if prefix else name
+                                    url_path = f"output/{folder_name}/{job_id}/{rel_path}"
+                                    files.append({
+                                        "name": name,
+                                        "url": url_path,
+                                        "type": "pdf"
+                                    })
+                                elif name.startswith("res_") and ext in allow_res_exts:
+                                    # res 文件在 txt/ 子目录中
+                                    rel_path = name if not prefix else prefix + name
+                                    url_path = f"output/{folder_name}/{job_id}/{rel_path}"
+                                    files.append({
+                                        "name": name,
+                                        "url": url_path,
+                                        "type": "res"
+                                    })
+                    except Exception:
+                        pass
+
+                scan_directory(job_dir)
+
+                # 同时扫描 output/imgs 目录（OCR API 返回的图片）
+                output_imgs_dir = os.path.join(job_dir, "output", "imgs")
+                if os.path.isdir(output_imgs_dir):
+                    try:
+                        for name in os.listdir(output_imgs_dir):
+                            fpath = os.path.join(output_imgs_dir, name)
                             if os.path.isfile(fpath):
-                                url_path = f"output/{folder_name}/{job_id}/{name}"
-                                ftype = "pdf" if ext.lower() == ".pdf" else "image"
-                                files.append({"name": name, "url": url_path, "type": ftype})
-                except Exception:
-                    pass
+                                _, ext = os.path.splitext(name)
+                                ext = ext.lower()
+                                if ext in allow_img_exts:
+                                    rel_path = f"output/imgs/{name}"
+                                    url_path = f"output/{folder_name}/{job_id}/output/imgs/{name}"
+                                    files.append({
+                                        "name": name,
+                                        "url": url_path,
+                                        "type": "api_image"
+                                    })
+                    except Exception:
+                        pass
+
                 self._send(200, _json_bytes({"files": files}))
                 return
 
@@ -827,6 +1469,22 @@ class Handler(BaseHTTPRequestHandler):
                 except Exception as e:
                     self._send(500, _json_bytes({"error": str(e)}))
                     return
+                
+                # 读取元数据文件获取 hasAnswer
+                has_answer = False
+                try:
+                    meta_file = os.path.join(job_dir, "meta.json")
+                    if os.path.exists(meta_file):
+                        with open(meta_file, "r", encoding="utf-8") as f:
+                            meta_data = json.load(f)
+                            has_answer = meta_data.get("hasAnswer", False)
+                    else:
+                        # 兼容旧数据：检查参考答案目录是否存在
+                        answer_dir = os.path.join(job_dir, "参考答案")
+                        has_answer = os.path.isdir(answer_dir)
+                except Exception:
+                    pass
+                
                 self._send(
                     200,
                     _json_bytes(
@@ -837,6 +1495,7 @@ class Handler(BaseHTTPRequestHandler):
                             "outputDir": job_dir,
                             "type": "split" if req_type == "split" else "ocr",
                             "text": text,
+                            "hasAnswer": has_answer,
                         }
                     ),
                 )
@@ -900,6 +1559,8 @@ class Handler(BaseHTTPRequestHandler):
                 subject = (data.get("subject") or "").strip()
                 text = (data.get("text") or "").strip()
                 output_dir = (data.get("outputDir") or "").strip() or None
+                has_answer = data.get("hasAnswer", False)
+                print(f"[API] 分割请求: outputDir={output_dir}, hasAnswer={has_answer}")
                 if output_dir and (not os.path.isdir(output_dir) or not _is_under_output_root(output_dir)):
                     output_dir = None
                 if not subject:
@@ -908,8 +1569,8 @@ class Handler(BaseHTTPRequestHandler):
                 if not text:
                     self._send(400, _json_bytes({"error": "missing_text"}))
                     return
-                user_input = subject + "\n" + text
-                job_id = _create_coze_job(user_input, output_dir)
+                # 传递 subject 给后端，由后端统一拼接
+                job_id = _create_coze_job(text, output_dir, has_answer, subject)
                 self._send(200, _json_bytes({"jobId": job_id}))
                 return
             
@@ -922,7 +1583,13 @@ class Handler(BaseHTTPRequestHandler):
                 job_id = _create_job_upload(filename, content)
                 self._send(200, _json_bytes({"jobId": job_id}))
                 return
-            
+
+            # 上传文件夹并识别
+            if parsed.path == "/api/ocr/upload-folder":
+                job_id = _create_job_upload_folder(self)
+                self._send(200, _json_bytes({"jobId": job_id}))
+                return
+
             # 根据路径/URL识别
             if parsed.path != "/api/ocr":
                 self._send(404, _json_bytes({"error": "not_found"}))
@@ -938,9 +1605,8 @@ class Handler(BaseHTTPRequestHandler):
             if not path:
                 self._send(400, _json_bytes({"error": "missing_path"}))
                 return
-            if not path.startswith("http") and (
-                not os.path.exists(path) or not os.path.isfile(path)
-            ):
+            # 支持文件夹路径或文件路径
+            if not path.startswith("http") and not os.path.exists(path):
                 self._send(400, _json_bytes({"error": "file_not_found"}))
                 return
             job_id = _create_job(path)

@@ -21,6 +21,7 @@ const setStatus = (s) => ($("#status").textContent = s);
 let katexLoadPromise = null;
 let currentOutputDir = null; // 当前任务的输出目录（用于分割任务）
 let currentContentType = "ocr"; // 当前显示的内容类型（ocr 或 split）
+let currentHasAnswer = false; // 当前任务是否有参考答案
 
 // 运行状态守卫，防止重复提交
 const runGuard = {
@@ -438,14 +439,23 @@ async function copyText(text) {
   document.body.removeChild(ta);
 }
 
-// 当前选中的上传文件
-let selectedFile = null;
+// 当前选中的上传文件夹
+let selectedFolder = null;
 
-// 设置选中的文件并更新 UI
-function setSelectedFile(file) {
-  selectedFile = file || null;
-  $("#fileName").textContent = selectedFile ? selectedFile.name : "未选择";
-  $("#clearFile").disabled = !selectedFile;
+// 设置选中的文件夹并更新 UI
+function setSelectedFolder(files) {
+  selectedFolder = files && files.length > 0 ? files : null;
+  const folderNameEl = $("#folderName");
+  if (selectedFolder) {
+    // 显示文件夹名称（从第一个文件的webkitRelativePath获取）
+    const firstFile = selectedFolder[0];
+    const pathParts = (firstFile.webkitRelativePath || "").split("/");
+    const folderName = pathParts.length > 0 ? pathParts[0] : firstFile.name;
+    folderNameEl.textContent = folderName + ` (${selectedFolder.length} 个文件)`;
+  } else {
+    folderNameEl.textContent = "未选择";
+  }
+  $("#clearFolder").disabled = !selectedFolder;
   updateRunEnabled();
 }
 
@@ -457,7 +467,18 @@ async function pollResult(jobId) {
     const status = await getJson(`${API_BASE}/api/ocr/${jobId}`);
     setStatus(status.state || "unknown");
 
-    // 显示提取进度
+    // 显示提取进度（文件夹模式）
+    if (status.state === "processing_image" && status.progress) {
+      const completed = status.progress.completed || "?";
+      const total = status.progress.total || "?";
+      const failed = status.progress.failed || 0;
+      $("#meta").textContent = `处理图片 ${completed}/${total}${failed > 0 ? ` (${failed}失败)` : ''}`;
+      if (status.log) {
+        log(status.log);
+      }
+    }
+
+    // 显示文件夹模式的总进度
     if (status.progress && (status.progress.totalPages || status.progress.extractedPages)) {
       const tp = status.progress.totalPages ?? "?";
       const ep = status.progress.extractedPages ?? "?";
@@ -472,13 +493,20 @@ async function pollResult(jobId) {
       $("#output").value = res.text || "";
       currentOutputDir = res.outputDir || null;
       currentContentType = "ocr";
+      currentHasAnswer = res.hasAnswer || false;
       runGuard.running = false;
       runGuard.ocrDone = true;
+      // 保存 res 数据供标记功能使用
+      if (res.layoutParsingResults) {
+        cachedResData = { result: { layoutParsingResults: res.layoutParsingResults } };
+      }
       updateRunEnabled();
       const tl = $("#titleLabel");
       if (tl) tl.textContent = "识别结果";
       const elapsed = Math.round((Date.now() - startedAt) / 1000);
-      $("#meta").textContent = `pages ${res.pages ?? "?"} · ${elapsed}s`;
+      const pageCount = res.pages ?? "?";
+      const answerTag = currentHasAnswer ? " · 有参考答案" : "";
+      $("#meta").textContent = `pages ${pageCount} · ${elapsed}s${answerTag}`;
       $("#copy").disabled = !$("#output").value;
       updateSplitEnabled();
       updatePreviewEnabled();
@@ -544,9 +572,12 @@ async function openHistory() {
             $("#output").value = (detail && detail.text) || "";
             currentOutputDir = (detail && detail.outputDir) || null;
             currentContentType = "split";
+            // 直接使用列表中的 hasAnswer（避免额外 API 调用）
+            currentHasAnswer = (item && item.hasAnswer) || (detail && detail.hasAnswer) || false;
+            const answerTag = currentHasAnswer ? " · 有参考答案" : "";
             const tl = $("#titleLabel");
             if (tl) tl.textContent = "分割结果";
-            $("#meta").textContent = `history · ${detail.folderName || ""} · 分割`;
+            $("#meta").textContent = `history · ${detail.folderName || ""} · 分割${answerTag}`;
             $("#copy").disabled = !$("#output").value;
             updateSplitEnabled();
             updatePreviewEnabled();
@@ -568,9 +599,12 @@ async function openHistory() {
           $("#output").value = (detail && detail.text) || "";
           currentOutputDir = (detail && detail.outputDir) || null;
           currentContentType = "ocr";
+          // 直接使用列表中的 hasAnswer（避免额外 API 调用）
+          currentHasAnswer = (item && item.hasAnswer) || (detail && detail.hasAnswer) || false;
+          const answerTag = currentHasAnswer ? " · 有参考答案" : "";
           const tl = $("#titleLabel");
           if (tl) tl.textContent = "识别结果";
-          $("#meta").textContent = `history · ${detail.folderName || ""}`;
+          $("#meta").textContent = `history · ${detail.folderName || ""}${answerTag}`;
           $("#copy").disabled = !$("#output").value;
           updateSplitEnabled();
           updatePreviewEnabled();
@@ -603,6 +637,41 @@ async function runOcrPath(path) {
   const jobId = created.jobId;
   log(`jobId=${jobId}`);
   await pollResult(jobId);
+}
+
+// 基于文件夹上传运行 OCR
+async function runOcrFolder(files) {
+  $("#output").value = "";
+  $("#meta").textContent = "";
+  $("#copy").disabled = true;
+  $("#log").textContent = "";
+  cachedResData = null;
+  updateMarkEnabled();
+
+  setStatus("uploading");
+  log("上传文件夹并提交任务");
+
+  try {
+    // 获取文件夹名称
+    const firstFile = files[0];
+    const pathParts = (firstFile.webkitRelativePath || "").split("/");
+    const folderName = pathParts.length > 0 ? pathParts[0] : "upload";
+
+    const fd = new FormData();
+    fd.append("folderName", folderName);
+
+    // 添加所有文件
+    for (let i = 0; i < files.length; i++) {
+      fd.append("files", files[i], files[i].webkitRelativePath || files[i].name);
+    }
+
+    const created = await postForm(`${API_BASE}/api/ocr/upload-folder`, fd);
+    const jobId = created.jobId;
+    log(`jobId=${jobId}`);
+    await pollResult(jobId);
+  } catch (e) {
+    throw e;
+  }
 }
 
 // 基于文件上传运行 OCR
@@ -642,12 +711,13 @@ $("#run").addEventListener("click", async () => {
     updateRunEnabled();
     $("#split").disabled = true;
     
-    if (selectedFile) {
-      await runOcrFile(selectedFile);
+    if (selectedFolder) {
+      // 上传文件夹
+      await runOcrFolder(selectedFolder);
       return;
     }
     if (!path) {
-      alert("请输入文件路径或选择文件");
+      alert("请选择文件夹或输入文件夹路径");
       return;
     }
     await runOcrPath(path);
@@ -659,18 +729,28 @@ $("#run").addEventListener("click", async () => {
   }
 });
 
-// 文件选择相关事件
-$("#browse").addEventListener("click", () => $("#file").click());
-$("#file").addEventListener("change", (e) => {
-  const f = e.target.files && e.target.files[0];
-  setSelectedFile(f || null);
+// 文件夹选择相关事件
+$("#browse").addEventListener("click", () => $("#folder").click());
+$("#folder").addEventListener("change", (e) => {
+  const files = e.target.files;
+  setSelectedFolder(files);
 });
-$("#clearFile").addEventListener("click", () => {
-  $("#file").value = "";
-  setSelectedFile(null);
+$("#clearFolder").addEventListener("click", () => {
+  $("#folder").value = "";
+  setSelectedFolder(null);
 });
-setSelectedFile(null);
+setSelectedFolder(null);
 $("#path").addEventListener("input", () => updateRunEnabled());
+
+// 更新"识别"按钮的启用状态
+function updateRunEnabled() {
+  const runEl = $("#run");
+  if (!runEl) return;
+  const pathEl = $("#path");
+  const hasInput =
+    !!selectedFolder || !!(pathEl && (pathEl.value || "").trim());
+  runEl.disabled = runGuard.running || runGuard.splitting || !hasInput;
+}
 
 // 轮询 Coze 任务结果
 async function pollCoze(jobId) {
@@ -704,11 +784,12 @@ $("#split").addEventListener("click", async () => {
     runGuard.splitting = true;
     updateRunEnabled();
     setStatus("coze");
-    log("分割文本：提交任务");
+    log(`分割文本：提交任务 (hasAnswer=${currentHasAnswer})`);
     const created = await postJson(`${API_BASE}/api/coze/run`, {
       subject,
       text,
       outputDir: currentOutputDir,
+      hasAnswer: currentHasAnswer,
     });
     const jobId = created.jobId;
     log(`cozeJobId=${jobId}`);
@@ -781,10 +862,59 @@ async function loadResData() {
     return null;
   }
   try {
-    const resp = await fetch(API_BASE + "/output/" + jobIdPath + "/res.txt");
-    if (!resp.ok) throw new Error("failed to load res.txt");
-    const text = await resp.text();
-    cachedResData = JSON.parse(text);
+    // 获取该任务下的所有文件
+    const resp = await fetch(API_BASE + "/api/history/assets?id=" + encodeURIComponent(jobIdPath));
+    if (!resp.ok) throw new Error("failed to load assets");
+    const data = await resp.json();
+    const files = (data && data.files) || [];
+
+    // 过滤出所有 res_*.txt 文件
+    const resFiles = files.filter(f => f.name && f.name.startsWith("res_") && f.name.endsWith(".txt"));
+
+    log(`找到 res 文件: ${resFiles.length} 个`);
+    
+    const result = { result: { layoutParsingResults: [] } };
+
+    // 遍历所有 res 文件并解析
+    for (const resFile of resFiles) {
+      log(`加载文件: ${resFile.name}`);
+      try {
+        // resFile.url 已经包含了完整路径
+        const resResp = await fetch(API_BASE + "/" + resFile.url);
+        if (!resResp.ok) {
+          log(`加载失败: ${resResp.status}`);
+          continue;
+        }
+        const text = await resResp.text();
+        log(`文件内容长度: ${text.length}`);
+
+        const lines = text.split('\n').filter(line => line.trim());
+        for (const line of lines) {
+          try {
+            const parsed = JSON.parse(line);
+            if (parsed.result?.layoutParsingResults) {
+              // 为每个结果添加来源文件信息
+              for (const layoutResult of parsed.result.layoutParsingResults) {
+                layoutResult._sourceFile = resFile.name;
+                // 同时设置到 parsing_res_list 中的每个 item
+                const parsingResList = layoutResult.prunedResult?.parsing_res_list || [];
+                for (const item of parsingResList) {
+                  item._sourceFile = resFile.name;
+                }
+              }
+              result.result.layoutParsingResults.push(...parsed.result.layoutParsingResults);
+            }
+          } catch (e) {
+            continue;
+          }
+        }
+      } catch (e) {
+        log(`加载 ${resFile.name} 失败: ${e.message}`);
+        continue;
+      }
+    }
+
+    cachedResData = result;
     return cachedResData;
   } catch (e) {
     log("加载res.txt失败: " + e.message);
@@ -792,121 +922,386 @@ async function loadResData() {
   }
 }
 
-function fuzzyMatch(text, query) {
+function exactMatch(text, query) {
   if (!text || !query) return false;
-  text = text.toLowerCase();
-  query = query.toLowerCase();
-  if (text.includes(query)) return true;
-  const queryChars = query.split("");
-  let idx = 0;
-  for (const ch of text) {
-    if (ch === queryChars[idx]) {
-      idx++;
-      if (idx === queryChars.length) return true;
-    }
-  }
-  return idx === queryChars.length;
+  // 完全匹配：文本中包含查询字符串
+  return text.includes(query);
 }
 
-async function highlightBlocks(blocks, query) {
+function fuzzyMatch(text, query) {
+  if (!text || !query) return false;
+  // 规范化：统一换行符，压缩多个空白为单个空格
+  // 处理真实换行符 \n \r 和字面字符串 \n
+  const normalize = (str) => str
+    .replace(/\\n/g, '\n')  // 字面 \n 转真实换行
+    .replace(/\r\n?/g, '\n') // Windows \r\n 和旧 Mac \r 转 \n
+    .replace(/\s+/g, ' ')    // 压缩空白为单个空格
+    .trim();
+  const normalizedText = normalize(text);
+  const normalizedQuery = normalize(query);
+  return normalizedText.toLowerCase().includes(normalizedQuery.toLowerCase());
+}
+
+async function highlightBlocks(blocksWithPage, query) {
   const jobIdPath = getJobIdPath();
   if (!jobIdPath) {
     alert("无法获取任务路径");
     return;
   }
-  
+
   const matchedBlocks = [];
-  for (const block of blocks) {
+  
+  for (const { block, pageIndex } of blocksWithPage) {
     const content = block.block_content || "";
     if (fuzzyMatch(content, query)) {
-      matchedBlocks.push(block);
+      matchedBlocks.push({ ...block, pageIndex });
     }
   }
-  
+
   if (matchedBlocks.length === 0) {
     alert("未找到匹配的内容");
     return;
   }
-  
-  log(`找到 ${matchedBlocks.length} 个匹配项`);
-  
+
+  // 获取所有匹配的图片文件
+  const sourceFiles = new Set();
+  for (const block of matchedBlocks) {
+    if (block._sourceFile) {
+      // 从 res_answer_xxx.jpg.txt 或 res_xxx.jpg.txt 中提取图片名称 xxx.jpg
+      let imgName = block._sourceFile.replace(/^res_/, '').replace(/\.txt$/, '');
+      // 去掉 answer_ 前缀（参考答案文件名有此前缀）
+      imgName = imgName.replace(/^answer_/, '');
+      sourceFiles.add(imgName);
+    }
+  }
+
   try {
     const resp = await fetch(API_BASE + "/api/history/assets?id=" + encodeURIComponent(jobIdPath));
     const data = await resp.json();
     const files = (data && data.files) || [];
-    const imageFile = files.find(f => f.type === "image");
-    const pdfFile = files.find(f => f.type === "pdf");
-    const sourceFile = pdfFile || imageFile;
-    
-    if (!sourceFile) {
-      alert("未找到原始图片");
-      return;
-    }
-    
-    const imgUrl = API_BASE + "/" + sourceFile.url;
-    const img = new Image();
-    img.crossOrigin = "anonymous";
-    
-    await new Promise((resolve, reject) => {
-      img.onload = resolve;
-      img.onerror = reject;
-      img.src = imgUrl;
+
+    // 过滤出需要高亮的图片文件
+    // 优先使用 imgs/ 目录中的原图
+    let targetFiles = files.filter(f => {
+      if (f.type !== "image") return false;
+      return sourceFiles.has(f.name);
     });
-    
-    const canvas = document.createElement("canvas");
-    canvas.width = img.width;
-    canvas.height = img.height;
-    const ctx = canvas.getContext("2d");
-    ctx.drawImage(img, 0, 0);
-    
-    ctx.globalAlpha = 0.4;
-    ctx.fillStyle = "#ffff00";
-    
-    for (const block of matchedBlocks) {
-      const bbox = block.block_bbox;
-      if (bbox && bbox.length === 4) {
-        ctx.fillRect(bbox[0], bbox[1], bbox[2] - bbox[0], bbox[3] - bbox[1]);
+
+    // 如果 imgs/ 没有，尝试从 api_image 类型查找
+    if (targetFiles.length === 0) {
+      targetFiles = files.filter(f => {
+        if (f.type !== "api_image") return false;
+        return sourceFiles.has(f.name);
+      });
+    }
+
+    // 如果还是没有，尝试参考答案目录
+    if (targetFiles.length === 0) {
+      targetFiles = files.filter(f => {
+        if (f.type !== "image") return false;
+        if (f.name && f.name.includes("参考答案")) {
+          // JavaScript 获取文件名：取最后一个路径段
+          const basename = f.name.replace(/\\/g, '/').split('/').pop();
+          return sourceFiles.has(basename);
+        }
+        return false;
+      });
+    }
+
+    if (targetFiles.length > 0) {
+      await highlightImages(jobIdPath, targetFiles, matchedBlocks);
+    } else {
+      alert("未找到原始图片文件");
+    }
+
+  } catch (e) {
+    log("标记失败: " + e.message);
+    alert("标记失败: " + e.message);
+  }
+}
+
+async function highlightImages(jobIdPath, sourceFiles, matchedBlocks) {
+  // 按图片名称分组匹配块
+  const blocksByImage = {};
+  for (const block of matchedBlocks) {
+    if (block._sourceFile) {
+      let imgName = block._sourceFile.replace(/^res_/, '').replace(/\.txt$/, '');
+      // 去掉 answer_ 前缀（参考答案文件名有此前缀）
+      imgName = imgName.replace(/^answer_/, '');
+      if (!blocksByImage[imgName]) {
+        blocksByImage[imgName] = [];
       }
+      blocksByImage[imgName].push(block);
     }
-    
-    ctx.globalAlpha = 1;
-    ctx.strokeStyle = "#ff0000";
-    ctx.lineWidth = 3;
-    
-    for (const block of matchedBlocks) {
-      const bbox = block.block_bbox;
-      if (bbox && bbox.length === 4) {
-        ctx.strokeRect(bbox[0], bbox[1], bbox[2] - bbox[0], bbox[3] - bbox[1]);
-      }
-    }
-    
-    const highlightWin = window.open("", "_blank");
-    if (!highlightWin) {
-      alert("弹出窗口被拦截，请允许弹出窗口。");
-      return;
-    }
-    
-    const dataUrl = canvas.toDataURL("image/jpeg", 0.95);
-    highlightWin.document.write(`<!DOCTYPE html>
+  }
+  
+  const highlightWin = window.open("", "_blank");
+  if (!highlightWin) {
+    alert("弹出窗口被拦截，请允许弹出窗口。");
+    return;
+  }
+  
+  // 构建 HTML
+  let htmlContent = `<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
   <meta charset="utf-8">
   <title>标记结果 - PaddleDev</title>
   <style>
-    body{margin:0;display:flex;justify-content:center;align-items:center;min-height:100vh;background:#333}
-    img{max-width:100%;max-height:100vh;display:block;margin:auto}
+    body{margin:0;padding:20px;background:#333;min-height:100vh;display:flex;flex-direction:column;align-items:center}
+    h2{color:#fff;margin:0 0 20px;font-family:system-ui,sans-serif}
+    .page-container{margin-bottom:30px;background:#fff;box-shadow:0 4px 12px rgba(0,0,0,0.3);border-radius:4px;overflow:hidden}
+    canvas{display:block;max-width:100%;height:auto}
+    .page-label{background:#222;color:#fff;padding:8px 16px;font-family:system-ui,sans-serif;font-size:14px}
+    .loading{color:#fff;font-size:14px}
   </style>
 </head>
 <body>
-  <img src="${dataUrl}" alt="highlighted">
+  <h2>标记结果</h2>
+  <div id="pages"><p class="loading">加载中...</p></div>
+  <script>
+    const API_BASE = ${JSON.stringify(API_BASE)};
+    const jobIdPath = ${JSON.stringify(jobIdPath)};
+    const sourceFiles = ${JSON.stringify(sourceFiles)};
+    const blocksByImage = ${JSON.stringify(blocksByImage)};
+    
+    async function loadImageWithHighlight(imgUrl, blocks, canvas) {
+      return new Promise((resolve, reject) => {
+        const img = new Image();
+        img.crossOrigin = "anonymous";
+        img.onload = () => {
+          canvas.width = img.width;
+          canvas.height = img.height;
+          const ctx = canvas.getContext("2d");
+          ctx.drawImage(img, 0, 0);
+          
+          // 绘制高亮
+          ctx.globalAlpha = 0.4;
+          ctx.fillStyle = "#ffff00";
+          for (const block of blocks) {
+            const bbox = block.block_bbox;
+            if (bbox && bbox.length === 4) {
+              ctx.fillRect(bbox[0], bbox[1], bbox[2] - bbox[0], bbox[3] - bbox[1]);
+            }
+          }
+          
+          ctx.globalAlpha = 1;
+          ctx.strokeStyle = "#ff0000";
+          ctx.lineWidth = 3;
+          for (const block of blocks) {
+            const bbox = block.block_bbox;
+            if (bbox && bbox.length === 4) {
+              ctx.strokeRect(bbox[0], bbox[1], bbox[2] - bbox[0], bbox[3] - bbox[1]);
+            }
+          }
+          resolve();
+        };
+        img.onerror = reject;
+        img.src = imgUrl;
+      });
+    }
+    
+    async function init() {
+      const container = document.getElementById("pages");
+      container.innerHTML = "";
+      
+      for (const file of sourceFiles) {
+        const url = API_BASE + "/" + file.url;
+        const blocks = blocksByImage[file.name] || [];
+        
+        const pageDiv = document.createElement("div");
+        pageDiv.className = "page-container";
+        
+        const labelDiv = document.createElement("div");
+        labelDiv.className = "page-label";
+        labelDiv.textContent = file.name + (blocks.length > 0 ? " - " + blocks.length + "处匹配" : "");
+        
+        const canvas = document.createElement("canvas");
+        
+        pageDiv.appendChild(labelDiv);
+        pageDiv.appendChild(canvas);
+        container.appendChild(pageDiv);
+        
+        try {
+          await loadImageWithHighlight(url, blocks, canvas);
+        } catch (e) {
+          canvas.width = 400;
+          canvas.height = 200;
+          const ctx = canvas.getContext("2d");
+          ctx.fillStyle = "#f0f0f0";
+          ctx.fillRect(0, 0, 400, 200);
+          ctx.fillStyle = "#666";
+          ctx.font = "14px sans-serif";
+          ctx.fillText("图片加载失败", 150, 100);
+        }
+      }
+    }
+    
+    init();
+  <\/script>
+</body>
+</html>`;
+  
+  highlightWin.document.write(htmlContent);
+  highlightWin.document.close();
+}
+
+async function highlightPdf(pdfUrl, matchedBlocks, jobIdPath) {
+  let pdfjsLib = window.pdfjsLib;
+  if (!pdfjsLib) {
+    log("加载 PDF.js 库...");
+    const cdnList = [
+      "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js",
+      "https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.min.js",
+      "https://unpkg.com/pdfjs-dist@3.11.174/build/pdf.min.js"
+    ];
+    
+    for (const cdn of cdnList) {
+      try {
+        await new Promise((resolve, reject) => {
+          const s = document.createElement("script");
+          s.src = cdn;
+          s.onload = () => resolve();
+          s.onerror = () => reject(new Error("load failed"));
+          document.head.appendChild(s);
+        });
+        pdfjsLib = window.pdfjsLib;
+        if (pdfjsLib) break;
+      } catch (e) {
+        continue;
+      }
+    }
+    
+    if (!pdfjsLib) {
+      throw new Error("无法加载 PDF.js 库");
+    }
+    
+    try {
+      pdfjsLib.GlobalWorkerOptions.workerSrc = pdfjsLib.GlobalWorkerOptions.workerSrc || 
+        cdnList[0].replace("pdf.min.js", "pdf.worker.min.js");
+    } catch (e) {
+      // worker 可能不需要
+    }
+  }
+  
+  const loadingTask = pdfjsLib.getDocument(pdfUrl);
+  const pdf = await loadingTask.promise;
+  const numPages = pdf.numPages;
+  log(`PDF 共 ${numPages} 页`);
+  
+  const highlightWin = window.open("", "_blank");
+  if (!highlightWin) {
+    alert("弹出窗口被拦截，请允许弹出窗口。");
+    return;
+  }
+  
+  const pageNumbers = new Set();
+  for (const block of matchedBlocks) {
+    const pageInfo = block.pageIndex;
+    if (pageInfo !== undefined && pageInfo !== null) {
+      pageNumbers.add(pageInfo);
+    }
+  }
+  
+  if (pageNumbers.size === 0) {
+    for (let i = 1; i <= numPages; i++) {
+      pageNumbers.add(i);
+    }
+  }
+  
+  const sortedPages = Array.from(pageNumbers).sort((a, b) => a - b);
+  const pageCanvases = [];
+  
+  for (const pageNum of sortedPages) {
+    const page = await pdf.getPage(pageNum);
+    const scale = 1.5;
+    const viewport = page.getViewport({ scale });
+    
+    const canvas = document.createElement("canvas");
+    canvas.width = viewport.width;
+    canvas.height = viewport.height;
+    const ctx = canvas.getContext("2d");
+    
+    await page.render({
+      canvasContext: ctx,
+      viewport: viewport
+    }).promise;
+    
+    pageCanvases.push({ pageNum, canvas, viewport, scale });
+  }
+  
+  for (const { pageNum, canvas, viewport, scale } of pageCanvases) {
+    const ctx = canvas.getContext("2d");
+    
+    ctx.globalAlpha = 0.4;
+    ctx.fillStyle = "#ffff00";
+    
+    for (const block of matchedBlocks) {
+      if (block.pageIndex !== pageNum) continue;
+      const bbox = block.block_bbox;
+      if (bbox && bbox.length === 4) {
+        const x = bbox[0] * scale;
+        const y = bbox[1] * scale;
+        const w = (bbox[2] - bbox[0]) * scale;
+        const h = (bbox[3] - bbox[1]) * scale;
+        ctx.fillRect(x, y, w, h);
+      }
+    }
+    
+    ctx.globalAlpha = 1;
+    ctx.strokeStyle = "#ff0000";
+    ctx.lineWidth = 3 * scale / 1.5;
+    
+    for (const block of matchedBlocks) {
+      if (block.pageIndex !== pageNum) continue;
+      const bbox = block.block_bbox;
+      if (bbox && bbox.length === 4) {
+        const x = bbox[0] * scale;
+        const y = bbox[1] * scale;
+        const w = (bbox[2] - bbox[0]) * scale;
+        const h = (bbox[3] - bbox[1]) * scale;
+        ctx.strokeRect(x, y, w, h);
+      }
+    }
+  }
+  
+  highlightWin.document.write(`<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <title>PDF 标记结果 - PaddleDev</title>
+  <style>
+    *{box-sizing:border-box}
+    body{margin:0;padding:20px;background:#333;min-height:100vh;display:flex;flex-direction:column;align-items:center}
+    h2{color:#fff;margin:0 0 20px;font-family:system-ui,sans-serif}
+    .page-container{margin-bottom:30px;background:#fff;box-shadow:0 4px 12px rgba(0,0,0,0.3);border-radius:4px;overflow:hidden}
+    canvas{display:block;max-width:100%;height:auto}
+    .page-label{background:#222;color:#fff;padding:8px 16px;font-family:system-ui,sans-serif;font-size:14px}
+  </style>
+</head>
+<body>
+  <h2>PDF 标记结果</h2>
+  <div id="pages"></div>
+  <script>
+    const pages = ${JSON.stringify(pageCanvases.map(p => ({
+      pageNum: p.pageNum,
+      dataUrl: p.canvas.toDataURL("image/png")
+    })))};
+    const container = document.getElementById("pages");
+    pages.forEach(page => {
+      const div = document.createElement("div");
+      div.className = "page-container";
+      div.innerHTML = '<div class="page-label">第 ' + page.pageNum + ' 页</div>';
+      const img = document.createElement("img");
+      img.src = page.dataUrl;
+      img.alt = "第 " + page.pageNum + " 页";
+      div.appendChild(img);
+      container.appendChild(div);
+    });
+  <\/script>
 </body>
 </html>`);
-    highlightWin.document.close();
-    
-  } catch (e) {
-    log("标记失败: " + e.message);
-    alert("标记失败: " + e.message);
-  }
+  highlightWin.document.close();
 }
 
 function getJobIdPath() {
@@ -943,23 +1338,24 @@ async function doMark() {
     if (!resData) {
       throw new Error("无法加载res.txt");
     }
-    
-    const blocks = [];
     const results = resData.result?.layoutParsingResults || [];
-    for (const result of results) {
+    const blocksWithPage = [];
+    for (let pageIdx = 0; pageIdx < results.length; pageIdx++) {
+      const result = results[pageIdx];
+      const pageIndex = pageIdx + 1;
       const parsingResList = result.prunedResult?.parsing_res_list || [];
       for (const item of parsingResList) {
         if (item.block_content) {
-          blocks.push(item);
+          blocksWithPage.push({ block: item, pageIndex });
         }
       }
     }
     
-    if (blocks.length === 0) {
+    if (blocksWithPage.length === 0) {
       throw new Error("res.txt中没有找到block_content");
     }
     
-    await highlightBlocks(blocks, query);
+    await highlightBlocks(blocksWithPage, query);
     
     setStatus("done");
     log("标记完成");

@@ -14,18 +14,18 @@
       
       <!-- 本地路径输入 -->
       <div class="field">
-        <div class="label">文件路径</div>
-        <input id="path" type="text" placeholder="输入 PDF 或图片的本地路径">
+        <div class="label">文件夹路径</div>
+        <input id="path" type="text" placeholder="输入包含图片的文件夹路径">
       </div>
       
-      <!-- 文件上传 -->
+      <!-- 文件夹选择 -->
       <div class="field">
-        <div class="label">选择文件</div>
+        <div class="label">选择文件夹</div>
         <div class="fileRow">
-          <input id="file" type="file" accept=".pdf,.png,.jpg,.jpeg,.bmp,.tif,.tiff,.webp" style="display:none;">
+          <input id="folder" type="file" webkitdirectory style="display:none;">
           <button id="browse" type="button">浏览…</button>
-          <div class="fileName" id="fileName">未选择</div>
-          <button id="clearFile" type="button" disabled>清除</button>
+          <div class="fileName" id="folderName">未选择</div>
+          <button id="clearFolder" type="button" disabled>清除</button>
         </div>
       </div>
       

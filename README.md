@@ -134,3 +134,8 @@ py backend/server.py
 
 本项目仅用于演示与内部使用，若需开源协议可在此处补充（例如 MIT / Apache-2.0）。
 
+cd C:\Users\XWZJ93\Desktop\项目\PaddleDev\backend
+python server.py
+
+cd C:\Users\XWZJ93\Desktop\项目\PaddleDev\frontend
+python -m http.server 5174

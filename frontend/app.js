@@ -639,8 +639,26 @@ async function runOcrPath(path) {
   await pollResult(jobId);
 }
 
+// 检查文件列表中是否包含图片
+function hasImages(files) {
+  const imageExts = ['.jpg', '.jpeg', '.png', '.gif', '.bmp', '.webp', '.tiff', '.tif'];
+  for (const file of files) {
+    const name = file.name.toLowerCase();
+    if (imageExts.some(ext => name.endsWith(ext))) {
+      return true;
+    }
+  }
+  return false;
+}
+
 // 基于文件夹上传运行 OCR
 async function runOcrFolder(files) {
+  // 检查是否包含图片
+  if (!hasImages(files)) {
+    alert("所选文件夹中没有图片文件，请选择包含图片的文件夹。");
+    return;
+  }
+
   $("#output").value = "";
   $("#meta").textContent = "";
   $("#copy").disabled = true;

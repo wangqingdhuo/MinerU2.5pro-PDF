@@ -10,6 +10,7 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from urllib.parse import parse_qs, urlparse, unquote
 
 import requests
+from PIL import Image
 
 # 服务器配置
 HOST = "0.0.0.0"
@@ -861,6 +862,14 @@ def _process_folder_sync(folder_path: str, base_dir: str, folder_name: str, loca
     }
     _write_text(meta_file, json.dumps(meta_data, ensure_ascii=False, indent=2))
 
+    # 后台生成合并PDF（不阻塞完成通知）
+    def generate_merged_pdf_async():
+        try:
+            _ensure_merged_pdf(base_dir, safe_folder_name, local_job_id)
+        except Exception as e:
+            print(f"[PDF] 后台生成合并PDF失败: {e}")
+    threading.Thread(target=generate_merged_pdf_async, daemon=True).start()
+
     log_msg = f"处理完成：{len(images)} 张正文图片，{failed_count} 张失败"
     _update_job(local_job_id, {"log": log_msg})
 
@@ -890,6 +899,93 @@ def _copy_pdfs_from_folder(folder_path: str, dest_dir: str) -> list[str]:
     except Exception:
         pass
     return copied
+
+
+def _merge_images_to_pdf(image_paths: list[str], output_pdf_path: str) -> bool:
+    """将多张图片合并为一个PDF文件（按顺序）
+
+    Args:
+        image_paths: 图片路径列表（按正确顺序排列）
+        output_pdf_path: 输出的PDF文件路径
+
+    Returns:
+        是否成功
+    """
+    if not image_paths:
+        return False
+
+    try:
+        images = []
+        for img_path in image_paths:
+            try:
+                # 打开图片并转换为RGB模式（确保兼容PDF）
+                img = Image.open(img_path)
+                if img.mode not in ("RGB", "L"):
+                    img = img.convert("RGB")
+                images.append(img)
+            except Exception as e:
+                print(f"[PDF] 无法打开图片 {img_path}: {e}")
+                continue
+
+        if not images:
+            return False
+
+        # 保存为PDF（第一个图片作为封面）
+        images[0].save(
+            output_pdf_path,
+            save_all=True,
+            append_images=images[1:] if len(images) > 1 else [],
+            resolution=100.0
+        )
+        print(f"[PDF] 合并完成: {output_pdf_path} ({len(images)} 页)")
+        return True
+    except Exception as e:
+        print(f"[PDF] 合并失败: {e}")
+        return False
+
+
+def _get_merged_pdf_path(job_dir: str, folder_name: str, job_id: str) -> str:
+    """获取合并PDF的路径（缓存路径）"""
+    return os.path.join(job_dir, "merged.pdf")
+
+
+def _ensure_merged_pdf(job_dir: str, folder_name: str, job_id: str) -> str | None:
+    """确保合并PDF存在，如果不存在则创建
+
+    Returns:
+        合并PDF的URL路径，如果失败返回None
+    """
+    merged_pdf_path = _get_merged_pdf_path(job_dir, folder_name, job_id)
+
+    # 如果已存在，直接返回
+    if os.path.exists(merged_pdf_path):
+        return f"output/{folder_name}/{job_id}/merged.pdf"
+
+    # 获取 imgs 目录下的所有图片（按文件名排序，与文本顺序一致）
+    imgs_dir = os.path.join(job_dir, "imgs")
+    if not os.path.isdir(imgs_dir):
+        print(f"[PDF] imgs目录不存在: {imgs_dir}")
+        return None
+
+    image_paths = []
+    try:
+        for fname in sorted(os.listdir(imgs_dir)):
+            ext = os.path.splitext(fname)[1].lower()
+            if ext in {".jpg", ".jpeg", ".png", ".bmp", ".webp", ".tif", ".tiff"}:
+                image_paths.append(os.path.join(imgs_dir, fname))
+    except Exception as e:
+        print(f"[PDF] 读取imgs目录失败: {e}")
+        return None
+
+    if not image_paths:
+        print(f"[PDF] 没有找到图片: {imgs_dir}")
+        return None
+
+    # 合并图片为PDF
+    if _merge_images_to_pdf(image_paths, merged_pdf_path):
+        return f"output/{folder_name}/{job_id}/merged.pdf"
+
+    return None
 
 
 def _parse_multipart_folder_upload(content_type: str, raw: bytes) -> tuple[str, dict[str, bytes]]:
@@ -1056,7 +1152,15 @@ def _run_ocr_from_uploaded_folder(local_job_id: str, temp_dir: str, folder_name:
             folder_name=safe_folder_name,
             local_job_id=local_job_id
         )
-        
+
+        # 后台生成合并PDF
+        def generate_merged_pdf_async():
+            try:
+                _ensure_merged_pdf(base_dir, safe_folder_name, local_job_id)
+            except Exception as e:
+                print(f"[PDF] 后台生成合并PDF失败: {e}")
+        threading.Thread(target=generate_merged_pdf_async, daemon=True).start()
+
         _update_job(
             local_job_id,
             {
@@ -1116,7 +1220,15 @@ def _run_ocr(local_job_id: str, path: str | None, uploaded: tuple[str, bytes] | 
                 folder_name=safe_folder_name,
                 local_job_id=local_job_id
             )
-            
+
+            # 后台生成合并PDF
+            def generate_merged_pdf_async():
+                try:
+                    _ensure_merged_pdf(base_dir, safe_folder_name, local_job_id)
+                except Exception as e:
+                    print(f"[PDF] 后台生成合并PDF失败: {e}")
+            threading.Thread(target=generate_merged_pdf_async, daemon=True).start()
+
             _update_job(
                 local_job_id,
                 {
@@ -1195,7 +1307,15 @@ def _run_ocr(local_job_id: str, path: str | None, uploaded: tuple[str, bytes] | 
             merged_txt = "\n\n".join(saved["txt_parts"])
             _write_text(os.path.join(base_dir, "ocr.md"), merged_md)
             _write_text(os.path.join(base_dir, "ocr.txt"), merged_txt)
-            
+
+            # 后台生成合并PDF
+            def generate_merged_pdf_async():
+                try:
+                    _ensure_merged_pdf(base_dir, folder_name, local_job_id)
+                except Exception as e:
+                    print(f"[PDF] 后台生成合并PDF失败: {e}")
+            threading.Thread(target=generate_merged_pdf_async, daemon=True).start()
+
             # 6. 更新任务为完成
             _update_job(
                 local_job_id,
@@ -1435,6 +1555,15 @@ class Handler(BaseHTTPRequestHandler):
                                     })
                     except Exception:
                         pass
+
+                # 添加合并后的PDF（如果存在）
+                merged_pdf_path = _get_merged_pdf_path(job_dir, folder_name, job_id)
+                if os.path.exists(merged_pdf_path):
+                    files.append({
+                        "name": "merged.pdf",
+                        "url": f"output/{folder_name}/{job_id}/merged.pdf",
+                        "type": "merged_pdf"
+                    })
 
                 self._send(200, _json_bytes({"files": files}))
                 return

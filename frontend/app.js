@@ -273,7 +273,7 @@ function openPreviewWindow() {
         });
       }
 
-      // 渲染左侧原始文件（PDF 或图片）
+      // 渲染左侧原始文件（优先使用合并PDF，否则使用原始PDF或图片）
       async function renderOriginal() {
         if (!jobIdPath) {
           originalEl.textContent = "无原始文件";
@@ -287,14 +287,15 @@ function openPreviewWindow() {
             originalEl.textContent = "无原始文件";
             return;
           }
-          // 优先选择 PDF；否则选择第一张图片
+          // 优先选择合并PDF；其次选择原始PDF；最后选择第一张图片
+          const mergedPdf = files.find(f => f.type === "merged_pdf");
           const pdf = files.find(f => f.type === "pdf");
-          const toShow = pdf || files.find(f => f.type === "image");
+          const toShow = mergedPdf || pdf || files.find(f => f.type === "image");
           if (!toShow) {
             originalEl.textContent = "无可预览文件";
             return;
           }
-          if (toShow.type === "pdf") {
+          if (toShow.type === "merged_pdf" || toShow.type === "pdf") {
             const iframe = document.createElement("iframe");
             iframe.src = apiBase + "/" + toShow.url;
             iframe.style.width = "100%";

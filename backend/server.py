@@ -977,6 +977,17 @@ def _ensure_merged_pdf(job_dir: str, folder_name: str, job_id: str) -> str | Non
         print(f"[PDF] 读取imgs目录失败: {e}")
         return None
 
+    # 获取参考答案目录下的图片并追加
+    answer_imgs_dir = os.path.join(job_dir, "参考答案", "imgs")
+    if os.path.isdir(answer_imgs_dir):
+        try:
+            for fname in sorted(os.listdir(answer_imgs_dir)):
+                ext = os.path.splitext(fname)[1].lower()
+                if ext in {".jpg", ".jpeg", ".png", ".bmp", ".webp", ".tif", ".tiff"}:
+                    image_paths.append(os.path.join(answer_imgs_dir, fname))
+        except Exception as e:
+            print(f"[PDF] 读取参考答案imgs目录失败: {e}")
+
     if not image_paths:
         print(f"[PDF] 没有找到图片: {imgs_dir}")
         return None

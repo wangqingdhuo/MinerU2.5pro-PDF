@@ -623,6 +623,15 @@ async function openHistory() {
   }
 }
 
+// 获取 OCR Token（优先使用页面输入的，没有则返回 null）
+function getOcrToken() {
+  const tokenInput = $("#ocrToken");
+  if (tokenInput && tokenInput.value && tokenInput.value.trim()) {
+    return tokenInput.value.trim();
+  }
+  return null;
+}
+
 // 基于本地路径运行 OCR
 async function runOcrPath(path) {
   $("#output").value = "";
@@ -634,7 +643,13 @@ async function runOcrPath(path) {
 
   setStatus("submitting");
   log("提交任务");
-  const created = await postJson(`${API_BASE}/api/ocr`, { path });
+  const token = getOcrToken();
+  const body = { path };
+  if (token) {
+    body.token = token;
+    log("使用自定义 Token");
+  }
+  const created = await postJson(`${API_BASE}/api/ocr`, body);
   const jobId = created.jobId;
   log(`jobId=${jobId}`);
   await pollResult(jobId);
@@ -684,7 +699,26 @@ async function runOcrFolder(files) {
       fd.append("files", files[i], files[i].webkitRelativePath || files[i].name);
     }
 
-    const created = await postForm(`${API_BASE}/api/ocr/upload-folder`, fd);
+    // 获取 token
+    const token = getOcrToken();
+    if (token) {
+      log("使用自定义 Token");
+    }
+
+    // 构建请求头
+    const headers = {};
+    if (token) {
+      headers["X-PaddleOCR-Token"] = token;
+    }
+
+    const resp = await fetch(`${API_BASE}/api/ocr/upload-folder`, {
+      method: "POST",
+      body: fd,
+      headers: headers
+    });
+    const text = await resp.text();
+    if (!resp.ok) throw new Error(text || String(resp.status));
+    const created = JSON.parse(text);
     const jobId = created.jobId;
     log(`jobId=${jobId}`);
     await pollResult(jobId);
@@ -706,7 +740,27 @@ async function runOcrFile(file) {
   log("上传文件并提交任务");
   const fd = new FormData();
   fd.append("file", file, file.name);
-  const created = await postForm(`${API_BASE}/api/ocr/upload`, fd);
+
+  // 获取 token
+  const token = getOcrToken();
+  if (token) {
+    log("使用自定义 Token");
+  }
+
+  // 构建请求头
+  const headers = {};
+  if (token) {
+    headers["X-PaddleOCR-Token"] = token;
+  }
+
+  const resp = await fetch(`${API_BASE}/api/ocr/upload`, {
+    method: "POST",
+    body: fd,
+    headers: headers
+  });
+  const text = await resp.text();
+  if (!resp.ok) throw new Error(text || String(resp.status));
+  const created = JSON.parse(text);
   const jobId = created.jobId;
   log(`jobId=${jobId}`);
   await pollResult(jobId);

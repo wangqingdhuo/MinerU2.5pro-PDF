@@ -468,9 +468,10 @@ def _extract_page_from_filename(filename: str) -> str:
     return basename
 
 
-def _submit_job_sync(path: str, is_folder: bool = False) -> str:
+def _submit_job_sync(path: str, is_folder: bool = False, token: str | None = None) -> str:
     """同步提交 OCR 任务（通过 URL 或本地文件路径）"""
-    headers = {"Authorization": f"bearer {TOKEN}"}
+    auth_token = token or TOKEN
+    headers = {"Authorization": f"bearer {auth_token}"}
     if path.startswith("http"):
         headers["Content-Type"] = "application/json"
         payload = {
@@ -492,14 +493,15 @@ def _submit_job_sync(path: str, is_folder: bool = False) -> str:
     return resp.json()["data"]["jobId"]
 
 
-def _submit_job_bytes_sync(filename: str, content: bytes) -> str:
+def _submit_job_bytes_sync(filename: str, content: bytes, token: str | None = None) -> str:
     """同步提交 OCR 任务（通过上传的二进制数据）"""
     if MAX_UPLOAD_BYTES is not None and len(content) > MAX_UPLOAD_BYTES:
         raise RuntimeError(
             f"upload too large: {len(content)} bytes (max {MAX_UPLOAD_BYTES} bytes). "
             "Please use server-local file path mode instead of browser upload."
         )
-    headers = {"Authorization": f"bearer {TOKEN}"}
+    auth_token = token or TOKEN
+    headers = {"Authorization": f"bearer {auth_token}"}
     data = {
         "model": MODEL,
         "optionalPayload": json.dumps(OPTIONAL_PAYLOAD, ensure_ascii=False),
@@ -520,9 +522,10 @@ def _submit_job_bytes_sync(filename: str, content: bytes) -> str:
     return resp.json()["data"]["jobId"]
 
 
-def _poll_job_sync(job_id: str, local_job_id: str) -> str:
+def _poll_job_sync(job_id: str, local_job_id: str, token: str | None = None) -> str:
     """轮询 OCR 任务的状态，直到完成并获取结果 URL"""
-    headers = {"Authorization": f"bearer {TOKEN}"}
+    auth_token = token or TOKEN
+    headers = {"Authorization": f"bearer {auth_token}"}
     while True:
         resp = _request("GET", f"{JOB_URL}/{job_id}", headers=headers, timeout=60)
         resp.raise_for_status()
@@ -628,15 +631,15 @@ def _process_and_save_jsonl(
     return {"pages": page_num - page_index, "markdown_parts": all_md, "txt_parts": all_txt}
 
 
-def _process_single_image(img_path: str, base_dir: str, folder_name: str, local_job_id: str) -> dict | None:
+def _process_single_image(img_path: str, base_dir: str, folder_name: str, local_job_id: str, token: str | None = None) -> dict | None:
     """处理单张图片，返回结果或None（失败时）"""
     img_basename = os.path.basename(img_path)
     try:
         # 提交 OCR 任务
-        remote_job_id = _submit_job_sync(img_path)
+        remote_job_id = _submit_job_sync(img_path, token=token)
         
         # 轮询状态
-        json_url = _poll_job_sync(remote_job_id, local_job_id)
+        json_url = _poll_job_sync(remote_job_id, local_job_id, token=token)
         
         # 下载结果
         jsonl_resp = _request("GET", json_url, timeout=300)
@@ -670,7 +673,7 @@ def _process_single_image(img_path: str, base_dir: str, folder_name: str, local_
         }
 
 
-def _process_folder_sync(folder_path: str, base_dir: str, folder_name: str, local_job_id: str) -> dict:
+def _process_folder_sync(folder_path: str, base_dir: str, folder_name: str, local_job_id: str, token: str | None = None) -> dict:
     """处理文件夹中的所有图片（并发），返回合并后的文本"""
     all_md: list[str] = []
     all_txt: list[str] = []
@@ -719,7 +722,7 @@ def _process_folder_sync(folder_path: str, base_dir: str, folder_name: str, loca
     with ThreadPoolExecutor(max_workers=MAX_CONCURRENT_OCR) as executor:
         # 提交所有任务
         future_to_img = {
-            executor.submit(_process_single_image, img_path, base_dir, folder_name, local_job_id): img_path
+            executor.submit(_process_single_image, img_path, base_dir, folder_name, local_job_id, token): img_path
             for img_path in images
         }
 
@@ -808,7 +811,7 @@ def _process_folder_sync(folder_path: str, base_dir: str, folder_name: str, loca
         answer_processed = []
         with ThreadPoolExecutor(max_workers=MAX_CONCURRENT_OCR) as executor:
             future_to_img = {
-                executor.submit(_process_single_image, img_path, os.path.join(base_dir, "参考答案"), folder_name, local_job_id): img_path
+                executor.submit(_process_single_image, img_path, os.path.join(base_dir, "参考答案"), folder_name, local_job_id, token): img_path
                 for img_path in answer_images
             }
 
@@ -1062,6 +1065,14 @@ def _create_job_upload_folder(handler) -> str:
     length = int(handler.headers.get("Content-Length") or "0")
     raw = handler.rfile.read(length) if length > 0 else b""
     
+    # 获取 token
+    auth_header = handler.headers.get("Authorization") or ""
+    token = None
+    if auth_header.startswith("Bearer "):
+        token = auth_header[7:].strip()
+    if not token:
+        token = handler.headers.get("X-PaddleOCR-Token") or None
+    
     folder_name, files = _parse_multipart_folder_upload(content_type, raw)
     
     # 创建临时目录
@@ -1113,6 +1124,7 @@ def _create_job_upload_folder(handler) -> str:
                 "path": temp_dir,
                 "isFolder": True,
                 "folderName": folder_name,
+                "token": token,
             }
         
         # 在后台线程中处理
@@ -1132,6 +1144,7 @@ def _create_job_upload_folder(handler) -> str:
 def _run_ocr_from_uploaded_folder(local_job_id: str, temp_dir: str, folder_name: str) -> None:
     """处理上传的文件夹"""
     try:
+        token = _get_job_token(local_job_id)
         _update_job(local_job_id, {"state": "submitting"})
         
         # 找临时目录下的实际文件夹
@@ -1161,7 +1174,8 @@ def _run_ocr_from_uploaded_folder(local_job_id: str, temp_dir: str, folder_name:
             folder_path=actual_folder,
             base_dir=base_dir,
             folder_name=safe_folder_name,
-            local_job_id=local_job_id
+            local_job_id=local_job_id,
+            token=token
         )
 
         # 后台生成合并PDF
@@ -1200,13 +1214,24 @@ def _run_ocr_from_uploaded_folder(local_job_id: str, temp_dir: str, folder_name:
             pass
 
 
-def _run_ocr(local_job_id: str, path: str | None, uploaded: tuple[str, bytes] | None) -> None:
+def _get_job_token(job_id: str) -> str | None:
+    """获取任务的 token"""
+    with _jobs_lock:
+        job = _jobs.get(job_id)
+        return job.get("token") if job else None
+
+
+def _run_ocr(local_job_id: str) -> None:
     """后台运行 OCR 任务的线程主逻辑"""
     try:
-        _update_job(local_job_id, {"state": "submitting"})
-        
-        # 判断是否为文件夹
+        token = _get_job_token(local_job_id)
+        job = _jobs.get(local_job_id)
+        if not job:
+            return
+        path = job.get("path")
         is_folder = path and os.path.isdir(path)
+        
+        _update_job(local_job_id, {"state": "submitting"})
         
         if is_folder:
             # 文件夹处理模式
@@ -1229,7 +1254,8 @@ def _run_ocr(local_job_id: str, path: str | None, uploaded: tuple[str, bytes] | 
                 folder_path=path,
                 base_dir=base_dir,
                 folder_name=safe_folder_name,
-                local_job_id=local_job_id
+                local_job_id=local_job_id,
+                token=token
             )
 
             # 后台生成合并PDF
@@ -1255,17 +1281,20 @@ def _run_ocr(local_job_id: str, path: str | None, uploaded: tuple[str, bytes] | 
                 },
             )
         else:
-            # 单文件处理模式（原有逻辑）
-            # 1. 提交任务
-            if uploaded is not None:
-                filename, content = uploaded
-                remote_job_id = _submit_job_bytes_sync(filename, content)
+            # 单文件处理模式
+            if job.get("fileName"):
+                # 从 job 中获取文件内容（需要先保存）
+                file_content = job.get("_fileContent")
+                if file_content:
+                    remote_job_id = _submit_job_bytes_sync(job["fileName"], file_content, token)
+                else:
+                    remote_job_id = _submit_job_sync(path or "", token=token)
             else:
-                remote_job_id = _submit_job_sync(path or "")
+                remote_job_id = _submit_job_sync(path or "", token=token)
             
             # 2. 轮询状态
             _update_job(local_job_id, {"state": "polling", "remoteJobId": remote_job_id})
-            json_url = _poll_job_sync(remote_job_id, local_job_id)
+            json_url = _poll_job_sync(remote_job_id, local_job_id, token)
             
             # 3. 下载结果
             _update_job(local_job_id, {"state": "downloading", "jsonUrl": json_url})
@@ -1273,13 +1302,8 @@ def _run_ocr(local_job_id: str, path: str | None, uploaded: tuple[str, bytes] | 
             jsonl_resp.raise_for_status()
             
             # 4. 准备本地保存目录
-            folder_name = ""
-            if uploaded is not None:
-                folder_name = _safe_folder_name(os.path.basename(uploaded[0]))
-            elif path:
-                folder_name = _safe_folder_name(os.path.basename(path))
-            else:
-                folder_name = _safe_folder_name("job")
+            folder_name = job.get("fileName") or (os.path.basename(path) if path else "job")
+            folder_name = _safe_folder_name(folder_name)
 
             base_dir = os.path.join(OUTPUT_ROOT, folder_name, local_job_id)
             os.makedirs(base_dir, exist_ok=True)
@@ -1288,20 +1312,6 @@ def _run_ocr(local_job_id: str, path: str | None, uploaded: tuple[str, bytes] | 
             # 保存接口返回的response为res.txt
             res_txt_path = os.path.join(base_dir, "res.txt")
             _write_text(res_txt_path, jsonl_resp.text)
-
-            # 尝试备份原始上传文件
-            try:
-                if uploaded is not None:
-                    up_name = os.path.basename(uploaded[0]) or "upload.bin"
-                    _write_bytes(os.path.join(base_dir, up_name), uploaded[1])
-                elif path and not path.startswith("http") and os.path.exists(path):
-                    try:
-                        with open(path, "rb") as rf:
-                            _write_bytes(os.path.join(base_dir, os.path.basename(path)), rf.read())
-                    except Exception:
-                        pass
-            except Exception:
-                pass
 
             # 5. 处理并保存最终结果
             _update_job(local_job_id, {"state": "saving", "outputDir": base_dir})
@@ -1346,6 +1356,11 @@ def _run_ocr(local_job_id: str, path: str | None, uploaded: tuple[str, bytes] | 
             local_job_id,
             {"state": "failed", "error": str(e), "finishedAt": _now_ms()},
         )
+    except Exception as e:
+        _update_job(
+            local_job_id,
+            {"state": "failed", "error": str(e), "finishedAt": _now_ms()},
+        )
 
 
 def _update_job(job_id: str, patch: dict) -> None:
@@ -1357,7 +1372,7 @@ def _update_job(job_id: str, patch: dict) -> None:
         job.update(patch)
 
 
-def _create_job(path: str) -> str:
+def _create_job(path: str, token: str | None = None) -> str:
     """创建一个基于路径/URL的 OCR 任务"""
     local_job_id = uuid.uuid4().hex
     is_folder = os.path.isdir(path)
@@ -1368,13 +1383,14 @@ def _create_job(path: str) -> str:
             "createdAt": _now_ms(),
             "path": path,
             "isFolder": is_folder,
+            "token": token,
         }
-    t = threading.Thread(target=_run_ocr, args=(local_job_id, path, None), daemon=True)
+    t = threading.Thread(target=_run_ocr, args=(local_job_id,), daemon=True)
     t.start()
     return local_job_id
 
 
-def _create_job_upload(filename: str, content: bytes) -> str:
+def _create_job_upload(filename: str, content: bytes, token: str | None = None) -> str:
     """创建一个基于上传二进制数据的 OCR 任务"""
     local_job_id = uuid.uuid4().hex
     with _jobs_lock:
@@ -1385,9 +1401,11 @@ def _create_job_upload(filename: str, content: bytes) -> str:
             "path": None,
             "fileName": filename,
             "fileSize": len(content),
+            "token": token,
+            "_fileContent": content,
         }
     t = threading.Thread(
-        target=_run_ocr, args=(local_job_id, None, (filename, content)), daemon=True
+        target=_run_ocr, args=(local_job_id,), daemon=True
     )
     t.start()
     return local_job_id
@@ -1720,7 +1738,15 @@ class Handler(BaseHTTPRequestHandler):
                 length = int(self.headers.get("Content-Length") or "0")
                 raw = self.rfile.read(length) if length > 0 else b""
                 filename, content = _parse_multipart_file(content_type, raw)
-                job_id = _create_job_upload(filename, content)
+                # 支持从 Authorization header 或自定义 header 获取 token
+                auth_header = self.headers.get("Authorization") or ""
+                token = None
+                if auth_header.startswith("Bearer "):
+                    token = auth_header[7:].strip()
+                # 也支持从 X-PaddleOCR-Token header 获取
+                if not token:
+                    token = self.headers.get("X-PaddleOCR-Token") or None
+                job_id = _create_job_upload(filename, content, token)
                 self._send(200, _json_bytes({"jobId": job_id}))
                 return
 
@@ -1742,6 +1768,7 @@ class Handler(BaseHTTPRequestHandler):
                 self._send(400, _json_bytes({"error": "bad_json"}))
                 return
             path = (data.get("path") or "").strip()
+            token = (data.get("token") or "").strip() or None
             if not path:
                 self._send(400, _json_bytes({"error": "missing_path"}))
                 return
@@ -1749,7 +1776,7 @@ class Handler(BaseHTTPRequestHandler):
             if not path.startswith("http") and not os.path.exists(path):
                 self._send(400, _json_bytes({"error": "file_not_found"}))
                 return
-            job_id = _create_job(path)
+            job_id = _create_job(path, token)
             self._send(200, _json_bytes({"jobId": job_id}))
         except Exception as e:
             self._send(500, _json_bytes({"error": str(e)}))

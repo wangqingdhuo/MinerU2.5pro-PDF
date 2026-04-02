@@ -130,7 +130,7 @@ py backend/server.py
 3. 历史列表没有记录？  
    - 仅在存在 `ocr.txt` 的任务目录才会显示；先完成一次识别。
 
-## 许可证
+## 
 
 本项目仅用于演示与内部使用，若需开源协议可在此处补充（例如 MIT / Apache-2.0）。
 
@@ -139,3 +139,24 @@ python server.py
 
 cd C:\Users\XWZJ93\Desktop\项目\PaddleDev\frontend
 python -m http.server 5174
+
+
+1.paddleocr-vl-1.5 登顶世界第一
+paddleocr是百度的
+
+2.paddleocr-vl-1.5相比于其他多模态大模型在试卷识别上的优点
+  图像定位技术，不只能识别文字，试卷里的图片也可以截图
+  不会将试题做成答案
+  一段文字因为换页隔开的情况，多模态大模型会出现删除这段文字在第二页的内容
+
+
+
+
+
+刘鑫（西班牙语） 13:58:35
+TOKEN = "6fbd004c0ea95e77ae5772a88e71bab947ef198c"
+
+
+
+郭宜豪 14:05:19
+TOKEN = "55d577f2d76b5fef81c782c946f7cb9a4a4d5ca7"

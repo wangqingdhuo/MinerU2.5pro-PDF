@@ -46,6 +46,19 @@
             <input id="ocrToken" type="password" class="input-brutal" placeholder="Enter API Token...">
           </div>
 
+          <div class="control-group">
+            <label class="block-label" for="language">[04] DOCUMENT_LANGUAGE</label>
+            <select id="language" class="input-brutal">
+              <option value="zh" selected>Chinese (Default)</option>
+              <option value="en">English</option>
+              <option value="japan">Japanese</option>
+              <option value="latin">French / German / Spanish (Latin)</option>
+              <option value="east_slavic">Russian (East Slavic)</option>
+              <option value="cyrillic">Cyrillic Script</option>
+              <option value="auto">Auto Detect</option>
+            </select>
+          </div>
+
           <div class="action-grid">
             <button id="run" class="btn-brutal btn-primary">RUN_EXTRACTION</button>
             <button id="copy" class="btn-brutal" disabled>COPY_OUTPUT</button>
@@ -56,7 +69,7 @@
           <div class="divider"></div>
 
           <div class="control-group">
-            <label class="block-label">[04] POST_PROCESS_SPLIT</label>
+            <label class="block-label">[05] POST_PROCESS_SPLIT</label>
             <div class="split-row">
               <select id="subject" class="input-brutal">
                 <option value="">SELECT_SUBJECT</option>

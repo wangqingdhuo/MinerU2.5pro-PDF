@@ -699,6 +699,10 @@ async function runOcrFolder(files) {
     if (token) {
       headers["X-PaddleOCR-Token"] = token;
     }
+    const langEl = $("#language");
+    if (langEl && langEl.value) {
+      headers["X-Language"] = langEl.value;
+    }
 
     const resp = await fetch(`${API_BASE}/api/ocr/upload-folder`, {
       method: "POST",

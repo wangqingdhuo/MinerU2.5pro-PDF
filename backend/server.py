@@ -468,16 +468,16 @@ def _extract_page_from_filename(filename: str) -> str:
     return basename
 
 
-def _submit_job_sync(path: str, is_folder: bool = False, token: str | None = None) -> str:
+def _submit_job_sync(path: str, is_folder: bool = False, token: str | None = None, language: str = "zh") -> str:
     """同步提交 OCR 任务（通过本地文件路径）"""
     if path.startswith("http"):
         raise RuntimeError("HTTP URLs are temporarily not supported. Please upload files directly.")
     with open(path, "rb") as f:
         content = f.read()
-    return _submit_job_bytes_sync(os.path.basename(path), content, token)
+    return _submit_job_bytes_sync(os.path.basename(path), content, token, language)
 
 
-def _submit_job_bytes_sync(filename: str, content: bytes, token: str | None = None) -> str:
+def _submit_job_bytes_sync(filename: str, content: bytes, token: str | None = None, language: str = "zh") -> str:
     """同步提交 OCR 任务（通过上传的二进制数据）"""
     if MAX_UPLOAD_BYTES is not None and len(content) > MAX_UPLOAD_BYTES:
         raise RuntimeError(
@@ -493,7 +493,7 @@ def _submit_job_bytes_sync(filename: str, content: bytes, token: str | None = No
     
     # 1. Get presigned URL
     payload = {
-        "language": "auto",
+        "language": language,
         "files": [{"name": filename, "is_ocr": True}],
         "model_version": MINERU_MODEL,
     }
@@ -622,12 +622,12 @@ def _process_mineru_zip(
     return {"pages": 1, "markdown_parts": [md_replaced], "txt_parts": [txt_replaced]}
 
 
-def _process_single_image(img_path: str, base_dir: str, folder_name: str, local_job_id: str, token: str | None = None) -> dict | None:
+def _process_single_image(img_path: str, base_dir: str, folder_name: str, local_job_id: str, token: str | None = None, language: str = "zh") -> dict | None:
     """处理单张图片，返回结果或None（失败时）"""
     img_basename = os.path.basename(img_path)
     try:
         # 提交 OCR 任务
-        remote_job_id = _submit_job_sync(img_path, token=token)
+        remote_job_id = _submit_job_sync(img_path, token=token, language=language)
         
         # 轮询状态
         zip_url = _poll_job_sync(remote_job_id, local_job_id, token=token)
@@ -708,12 +708,16 @@ def _process_folder_sync(folder_path: str, base_dir: str, folder_name: str, loca
     log_msg = f"找到 {total_images} 张图片，开始并发处理（最大 {MAX_CONCURRENT_OCR} 并发）"
     _update_job(local_job_id, {"log": log_msg})
 
+    with _jobs_lock:
+        job = _jobs.get(local_job_id, {})
+    language = job.get("language", "zh")
+
     # 使用 ThreadPoolExecutor 并发处理
     processed_results = []
     with ThreadPoolExecutor(max_workers=MAX_CONCURRENT_OCR) as executor:
         # 提交所有任务
         future_to_img = {
-            executor.submit(_process_single_image, img_path, base_dir, folder_name, local_job_id, token): img_path
+            executor.submit(_process_single_image, img_path, base_dir, folder_name, local_job_id, token=token, language=language): img_path
             for img_path in images
         }
 
@@ -802,7 +806,7 @@ def _process_folder_sync(folder_path: str, base_dir: str, folder_name: str, loca
         answer_processed = []
         with ThreadPoolExecutor(max_workers=MAX_CONCURRENT_OCR) as executor:
             future_to_img = {
-                executor.submit(_process_single_image, img_path, os.path.join(base_dir, "参考答案"), folder_name, local_job_id, token): img_path
+                executor.submit(_process_single_image, img_path, os.path.join(base_dir, "参考答案"), folder_name, local_job_id, token=token, language=language): img_path
                 for img_path in answer_images
             }
 
@@ -1273,15 +1277,16 @@ def _run_ocr(local_job_id: str) -> None:
             )
         else:
             # 单文件处理模式
+            language = job.get("language", "zh")
             if job.get("fileName"):
                 # 从 job 中获取文件内容（需要先保存）
                 file_content = job.get("_fileContent")
                 if file_content:
-                    remote_job_id = _submit_job_bytes_sync(job["fileName"], file_content, token)
+                    remote_job_id = _submit_job_bytes_sync(job["fileName"], file_content, token, language)
                 else:
-                    remote_job_id = _submit_job_sync(path or "", token=token)
+                    remote_job_id = _submit_job_sync(path or "", token=token, language=language)
             else:
-                remote_job_id = _submit_job_sync(path or "", token=token)
+                remote_job_id = _submit_job_sync(path or "", token=token, language=language)
             
             # 2. 轮询状态
             _update_job(local_job_id, {"state": "polling", "remoteJobId": remote_job_id})
@@ -1359,7 +1364,7 @@ def _update_job(job_id: str, patch: dict) -> None:
         job.update(patch)
 
 
-def _create_job(path: str, token: str | None = None) -> str:
+def _create_job(path: str, token: str | None = None, language: str = "zh") -> str:
     """创建一个基于路径/URL的 OCR 任务"""
     local_job_id = uuid.uuid4().hex
     is_folder = os.path.isdir(path)
@@ -1371,6 +1376,7 @@ def _create_job(path: str, token: str | None = None) -> str:
             "path": path,
             "isFolder": is_folder,
             "token": token,
+            "language": language,
         }
     t = threading.Thread(target=_run_ocr, args=(local_job_id,), daemon=True)
     t.start()

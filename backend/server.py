@@ -19,10 +19,10 @@ PORT = 8099
 # OCR 并发配置
 MAX_CONCURRENT_OCR = int(os.environ.get("MAX_CONCURRENT_OCR") or "5")
 
-# PaddleOCR API 配置
-JOB_URL = "https://paddleocr.aistudio-app.com/api/v2/ocr/jobs"
-MODEL = "PaddleOCR-VL-1.5"
-TOKEN = os.environ.get("PADDLE_OCR_TOKEN") or "e562edec6395acd23974e5a6c3dcabead1b9d5e5"
+# MinerU API 配置
+MINERU_API_BASE = "https://mineru.net"
+MINERU_MODEL = "vlm"
+TOKEN = os.environ.get("MINERU_TOKEN") or ""
 # 输出目录，默认 D:\paddlelog
 OUTPUT_ROOT = os.environ.get("PADDLE_LOG_DIR") or r"D:\paddlelog"
 REQUEST_RETRIES = int(os.environ.get("PADDLE_OCR_RETRIES") or "5")
@@ -469,166 +469,157 @@ def _extract_page_from_filename(filename: str) -> str:
 
 
 def _submit_job_sync(path: str, is_folder: bool = False, token: str | None = None) -> str:
-    """同步提交 OCR 任务（通过 URL 或本地文件路径）"""
-    auth_token = token or TOKEN
-    headers = {"Authorization": f"bearer {auth_token}"}
+    """同步提交 OCR 任务（通过本地文件路径）"""
     if path.startswith("http"):
-        headers["Content-Type"] = "application/json"
-        payload = {
-            "fileUrl": path,
-            "model": MODEL,
-            "optionalPayload": OPTIONAL_PAYLOAD,
-        }
-        resp = _request("POST", JOB_URL, json=payload, headers=headers, timeout=300)
-    else:
-        data = {
-            "model": MODEL,
-            "optionalPayload": json.dumps(OPTIONAL_PAYLOAD, ensure_ascii=False),
-        }
-        with open(path, "rb") as f:
-            resp = _request(
-                "POST", JOB_URL, headers=headers, data=data, files={"file": f}, timeout=300
-            )
-    resp.raise_for_status()
-    return resp.json()["data"]["jobId"]
+        raise RuntimeError("HTTP URLs are temporarily not supported. Please upload files directly.")
+    with open(path, "rb") as f:
+        content = f.read()
+    return _submit_job_bytes_sync(os.path.basename(path), content, token)
 
 
 def _submit_job_bytes_sync(filename: str, content: bytes, token: str | None = None) -> str:
     """同步提交 OCR 任务（通过上传的二进制数据）"""
     if MAX_UPLOAD_BYTES is not None and len(content) > MAX_UPLOAD_BYTES:
         raise RuntimeError(
-            f"upload too large: {len(content)} bytes (max {MAX_UPLOAD_BYTES} bytes). "
-            "Please use server-local file path mode instead of browser upload."
+            f"upload too large: {len(content)} bytes (max {MAX_UPLOAD_BYTES} bytes)."
         )
     auth_token = token or TOKEN
-    headers = {"Authorization": f"bearer {auth_token}"}
-    data = {
-        "model": MODEL,
-        "optionalPayload": json.dumps(OPTIONAL_PAYLOAD, ensure_ascii=False),
+    if not auth_token:
+        raise RuntimeError("MinerU Token is missing. Please provide it in the UI or set MINERU_TOKEN.")
+    headers = {
+        "Authorization": f"Bearer {auth_token}",
+        "Content-Type": "application/json"
     }
-    files = {"file": (filename, content)}
-    resp = _request(
-        "POST", JOB_URL, headers=headers, data=data, files=files, timeout=300
-    )
+    
+    # 1. Get presigned URL
+    payload = {
+        "language": "auto",
+        "files": [{"name": filename, "is_ocr": True}],
+        "model_version": MINERU_MODEL,
+    }
+    resp = _request("POST", f"{MINERU_API_BASE}/api/v4/file-urls/batch", json=payload, headers=headers, timeout=60)
     try:
         resp.raise_for_status()
     except requests.exceptions.HTTPError as e:
-        if resp.status_code == 413:
-            raise RuntimeError(
-                "PaddleOCR jobs 接口拒绝上传：文件过大(413)。"
-                "建议改用“文件路径”方式（让文件在服务端本机可访问），或改用可被公网访问的 URL 模式。"
-            ) from e
-        raise
-    return resp.json()["data"]["jobId"]
+        raise RuntimeError(f"MinerU API Error: {resp.text}") from e
+        
+    data = resp.json()
+    if data.get("code") != 0:
+        raise RuntimeError(f"MinerU error: {data.get('msg')}")
+        
+    batch_id = data["data"]["batch_id"]
+    file_urls = data["data"]["file_urls"]
+    if not file_urls:
+        raise RuntimeError("MinerU returned no file URLs")
+    file_url = file_urls[0]
+
+    # 2. Upload file content to presigned URL
+    upload_resp = _request("PUT", file_url, data=content, timeout=300)
+    upload_resp.raise_for_status()
+
+    return batch_id
 
 
 def _poll_job_sync(job_id: str, local_job_id: str, token: str | None = None) -> str:
-    """轮询 OCR 任务的状态，直到完成并获取结果 URL"""
+    """轮询 OCR 任务的状态，直到完成并获取结果 ZIP URL"""
     auth_token = token or TOKEN
-    headers = {"Authorization": f"bearer {auth_token}"}
+    headers = {"Authorization": f"Bearer {auth_token}"}
+    
     while True:
-        resp = _request("GET", f"{JOB_URL}/{job_id}", headers=headers, timeout=60)
+        resp = _request("GET", f"{MINERU_API_BASE}/api/v4/extract-results/batch/{job_id}", headers=headers, timeout=60)
         resp.raise_for_status()
-        data = resp.json()["data"]
-        state = data.get("state")
-        if state == "pending":
+        data = resp.json()
+        
+        if data.get("code") != 0:
+            raise RuntimeError(f"MinerU error: {data.get('msg')}")
+            
+        extract_results = data.get("data", {}).get("extract_result", [])
+        if not extract_results:
             _update_job(local_job_id, {"state": "pending"})
-        elif state == "running":
-            ep = data.get("extractProgress") or {}
-            _update_job(
-                local_job_id,
-                {
-                    "state": "running",
-                    "progress": {
-                        "totalPages": ep.get("totalPages"),
-                        "extractedPages": ep.get("extractedPages"),
-                    },
-                },
-            )
+            time.sleep(2)
+            continue
+            
+        task = extract_results[0]
+        state = task.get("state")
+        
+        if state in ("processing", "pending", "converting"):
+            _update_job(local_job_id, {"state": "running"})
         elif state == "failed":
-            raise RuntimeError(data.get("errorMsg") or "failed")
+            raise RuntimeError(task.get("error_msg") or "MinerU task failed")
         elif state == "done":
-            json_url = (data.get("resultUrl") or {}).get("jsonUrl")
-            if not json_url:
-                raise RuntimeError("missing jsonUrl")
-            return json_url
-        time.sleep(2)
+            zip_url = task.get("full_zip_url")
+            if not zip_url:
+                raise RuntimeError("MinerU missing full_zip_url in done state")
+            return zip_url
+            
+        time.sleep(5)
 
 
-def _process_and_save_jsonl(
-    jsonl_text: str, base_dir: str, base_name: str, folder_name: str, local_job_id: str,
+def _process_mineru_zip(
+    zip_bytes: bytes, base_dir: str, base_name: str, folder_name: str, local_job_id: str,
     img_name: str | None = None, page_index: int = 0
 ) -> dict:
-    """处理并保存 OCR 结果（JSONL格式），下载图片并替换路径"""
-    # txt 目录
+    """处理并保存 MinerU 返回的 ZIP 结果"""
+    import zipfile
+    import io
+    
     txt_base_dir = os.path.join(base_dir, "txt")
     os.makedirs(txt_base_dir, exist_ok=True)
+    
+    output_imgs_dir = os.path.join(base_dir, "output", "imgs")
+    os.makedirs(output_imgs_dir, exist_ok=True)
+    
+    md_content = ""
+    
+    with zipfile.ZipFile(io.BytesIO(zip_bytes)) as z:
+        # 首先提取图片
+        for filename in z.namelist():
+            if filename.lower().endswith(('.jpg', '.jpeg', '.png', '.bmp', '.webp', '.tif', '.tiff')):
+                # MinerU 的 zip 里图片通常在 images 文件夹下
+                # 我们把它们提取到 output_imgs_dir，并保持原名
+                img_basename = os.path.basename(filename)
+                if not img_basename:
+                    continue
+                img_data = z.read(filename)
+                _write_bytes(os.path.join(output_imgs_dir, img_basename), img_data)
+                
+        # 提取 Markdown 和 JSON
+        for filename in z.namelist():
+            if filename.endswith(".md"):
+                md_content = z.read(filename).decode("utf-8")
+            elif filename.endswith(".json"):
+                # 可以保存原始 json，用于前端可能需要的调试或标记
+                json_data = z.read(filename)
+                if img_name:
+                    res_file_path = os.path.join(txt_base_dir, f"res_{img_name}.txt")
+                    _write_bytes(res_file_path, json_data)
 
-    # imgs 目录（OCR API返回的图片）
-    output_dir = os.path.join(base_dir, "output", "imgs")
-    os.makedirs(output_dir, exist_ok=True)
+    # 替换 Markdown 中的图片路径
+    # MinerU 的 markdown 图片路径一般是 "images/xxx.jpg" 或 "./images/xxx.jpg"
+    # 我们需要将其替换为前端可以访问的相对路径
+    # 使用正则表达式替换图片路径
+    import re
+    def replacer(match):
+        img_path = match.group(1)
+        img_basename = os.path.basename(img_path)
+        # 前端请求时，会加上 API_BASE/output/folder_name/local_job_id/output/imgs/...
+        # 所以在 markdown 里，我们存 output/imgs/xxx.jpg
+        return f"output/imgs/{img_basename}"
 
-    # 保存每个图片的response
-    if img_name:
-        res_file_path = os.path.join(txt_base_dir, f"res_{img_name}.txt")
-        _write_text(res_file_path, jsonl_text)
+    md_replaced = re.sub(r'!\[.*?\]\(([^)]+)\)', lambda m: f"![image]({replacer(m)})", md_content)
+    
+    # 因为 MinerU 的 Markdown 包含格式，这里 txt 也直接使用 markdown
+    txt_replaced = md_replaced
 
-    all_md: list[str] = []
-    all_txt: list[str] = []
-    used_img_names: set[str] = set()
+    # 保存单页 Markdown/TXT
     page_num = page_index
+    md_filename = os.path.join(txt_base_dir, f"{base_name}_{page_num}.md")
+    _write_text(md_filename, md_replaced)
+    
+    txt_filename = os.path.join(txt_base_dir, f"{base_name}_{page_num}.txt")
+    _write_text(txt_filename, txt_replaced)
 
-    for line in jsonl_text.splitlines():
-        line = line.strip()
-        if not line:
-            continue
-        result = json.loads(line)["result"]
-        for res in result.get("layoutParsingResults") or []:
-            original_md_content = res["markdown"]["text"]
-            md_replace_map: dict[str, str] = {}
-            txt_replace_map: dict[str, str] = {}
-
-            # 处理 Markdown 中的图片
-            for img_path, img_url in (res["markdown"].get("images") or {}).items():
-                img_ext = os.path.splitext(img_path)[1].lower() or ".jpg"
-                new_img_name = _build_img_name(img_ext, used_img_names)
-                full_img_path = os.path.join(output_dir, new_img_name)
-                try:
-                    # 下载远程图片到本地
-                    img_resp = _request("GET", img_url, timeout=60)
-                    img_resp.raise_for_status()
-                    _write_bytes(full_img_path, img_resp.content)
-                    rel_img_path = f"{folder_name}/{local_job_id}/output/imgs/{new_img_name}"
-                    md_replace_map[img_path] = f"output/imgs/{new_img_name}"
-                    txt_replace_map[img_path] = rel_img_path
-                except Exception:
-                    # 下载失败则保留原始 URL
-                    md_replace_map[img_path] = img_url
-                    txt_replace_map[img_path] = img_url
-
-            # 替换 Markdown 中的图片路径
-            md_replaced = original_md_content
-            for orig_path, repl in md_replace_map.items():
-                md_replaced = md_replaced.replace(orig_path, repl)
-            all_md.append(md_replaced)
-
-            # 保存单页 Markdown
-            md_filename = os.path.join(txt_base_dir, f"{base_name}_{page_num}.md")
-            _write_text(md_filename, md_replaced)
-
-            # 替换 TXT 版本中的路径（用于前端显示）
-            txt_replaced = original_md_content
-            for orig_path, repl in txt_replace_map.items():
-                txt_replaced = txt_replaced.replace(orig_path, repl)
-            all_txt.append(txt_replaced)
-
-            # 保存单页 TXT
-            txt_filename = os.path.join(txt_base_dir, f"{base_name}_{page_num}.txt")
-            _write_text(txt_filename, txt_replaced)
-
-            page_num += 1
-
-    return {"pages": page_num - page_index, "markdown_parts": all_md, "txt_parts": all_txt}
+    return {"pages": 1, "markdown_parts": [md_replaced], "txt_parts": [txt_replaced]}
 
 
 def _process_single_image(img_path: str, base_dir: str, folder_name: str, local_job_id: str, token: str | None = None) -> dict | None:
@@ -639,16 +630,16 @@ def _process_single_image(img_path: str, base_dir: str, folder_name: str, local_
         remote_job_id = _submit_job_sync(img_path, token=token)
         
         # 轮询状态
-        json_url = _poll_job_sync(remote_job_id, local_job_id, token=token)
+        zip_url = _poll_job_sync(remote_job_id, local_job_id, token=token)
         
         # 下载结果
-        jsonl_resp = _request("GET", json_url, timeout=300)
-        jsonl_resp.raise_for_status()
+        zip_resp = _request("GET", zip_url, timeout=300)
+        zip_resp.raise_for_status()
         
         # 处理并保存（使用图片名称作为文件名，避免覆盖）
         base_name = os.path.splitext(img_basename)[0]
-        saved = _process_and_save_jsonl(
-            jsonl_resp.text,
+        saved = _process_mineru_zip(
+            zip_resp.content,
             base_dir=base_dir,
             base_name=base_name,
             folder_name=folder_name,
@@ -1294,12 +1285,12 @@ def _run_ocr(local_job_id: str) -> None:
             
             # 2. 轮询状态
             _update_job(local_job_id, {"state": "polling", "remoteJobId": remote_job_id})
-            json_url = _poll_job_sync(remote_job_id, local_job_id, token)
+            zip_url = _poll_job_sync(remote_job_id, local_job_id, token)
             
             # 3. 下载结果
-            _update_job(local_job_id, {"state": "downloading", "jsonUrl": json_url})
-            jsonl_resp = _request("GET", json_url, timeout=300)
-            jsonl_resp.raise_for_status()
+            _update_job(local_job_id, {"state": "downloading", "zipUrl": zip_url})
+            zip_resp = _request("GET", zip_url, timeout=300)
+            zip_resp.raise_for_status()
             
             # 4. 准备本地保存目录
             folder_name = job.get("fileName") or (os.path.basename(path) if path else "job")
@@ -1308,15 +1299,11 @@ def _run_ocr(local_job_id: str) -> None:
             base_dir = os.path.join(OUTPUT_ROOT, folder_name, local_job_id)
             os.makedirs(base_dir, exist_ok=True)
             base_name = os.path.splitext(folder_name)[0] or folder_name
-            
-            # 保存接口返回的response为res.txt
-            res_txt_path = os.path.join(base_dir, "res.txt")
-            _write_text(res_txt_path, jsonl_resp.text)
 
             # 5. 处理并保存最终结果
             _update_job(local_job_id, {"state": "saving", "outputDir": base_dir})
-            saved = _process_and_save_jsonl(
-                jsonl_resp.text,
+            saved = _process_mineru_zip(
+                zip_resp.content,
                 base_dir=base_dir,
                 base_name=base_name,
                 folder_name=folder_name,

@@ -3,108 +3,110 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>PaddleDev</title>
+  <title>MinerU Document Extractor</title>
   <link rel="stylesheet" href="./style.css">
 </head>
 <body>
   <div class="app">
-    <!-- 左侧面板：输入与控制 -->
-    <div class="left">
-      <div class="title">PaddleDev</div>
-      
-      <!-- 本地路径输入 -->
-      <div class="field">
-        <div class="label">文件夹路径</div>
-        <input id="path" type="text" placeholder="输入包含图片的文件夹路径">
+    <!-- Header -->
+    <header class="top-bar">
+      <div class="logo">
+        <span class="logo-mark">///</span>
+        <h1>MINERU EXTRACTOR</h1>
       </div>
-      
-      <!-- 文件夹选择 -->
-      <div class="field">
-        <div class="label">选择文件夹</div>
-        <div class="fileRow">
-          <input id="folder" type="file" webkitdirectory style="display:none;">
-          <button id="browse" type="button">浏览…</button>
-          <div class="fileName" id="folderName">未选择</div>
-          <button id="clearFolder" type="button" disabled>清除</button>
-        </div>
-      </div>
+      <div class="header-meta">v2.0.0 // INDUSTRIAL BUILD</div>
+    </header>
 
-      <!-- PaddleOCR Token -->
-      <div class="field">
-        <div class="label">PaddleOCR Token <span class="hint">(可选，留空使用系统默认)</span></div>
-        <input id="ocrToken" type="password" placeholder="输入 PaddleOCR Token">
-      </div>
-      
-      <!-- 操作按钮 -->
-      <div class="actions">
-        <button id="run">识别</button>
-        <button id="copy" disabled>复制</button>
-        <button id="preview" type="button" disabled>预览</button>
-        <button id="history" type="button">历史记录</button>
-      </div>
-      
-      <!-- 状态与日志 -->
-      <div class="status" id="status">idle</div>
-      <div class="log" id="log"></div>
-      
-      <!-- 第二步：文本分割（Coze 工作流） -->
-      <div class="step2">
-        <div class="label">第二步 分割文本</div>
-        <div class="step2Row">
-          <select id="subject">
-            <option value="">请选择学科</option>
-            <option value="语文">语文</option>
-            <option value="数学">数学</option>
-            <option value="英语">英语</option>
-            <option value="物理">物理</option>
-            <option value="历史">历史</option>
-            <option value="生物">生物</option>
-            <option value="地理">地理</option>
-            <option value="化学">化学</option>
-            <option value="政治">政治</option>
-            <option value="俄语">俄语</option>
-            <option value="西语">西语</option>
-            <option value="西班牙">西班牙</option>
-            <option value="德语">德语</option>
-            <option value="法语">法语</option>
-            <option value="日语">日语</option>
-          </select>
-          <button id="split" type="button" disabled>分割文本</button>
+    <div class="main-content">
+      <!-- Left Panel: Controls -->
+      <aside class="panel controls-panel">
+        <div class="panel-header">
+          <h2>INPUT_CONTROLS</h2>
+          <span class="status-indicator" id="statusIndicator">IDLE</span>
         </div>
-      </div>
 
-      <!-- 第三步：标记 -->
-      <div class="step3">
-        <div class="label">第三步 标记</div>
-        <div class="step3Row">
-          <input id="markText" type="text" placeholder="输入要标记的文字">
-          <button id="mark" type="button">标记</button>
+        <div class="panel-body">
+          <div class="control-group">
+            <label class="block-label" for="path">[01] FOLDER_PATH</label>
+            <input id="path" type="text" class="input-brutal" placeholder="Enter path to directory...">
+          </div>
+
+          <div class="control-group">
+            <label class="block-label">[02] OR_SELECT_DIRECTORY</label>
+            <div class="file-row">
+              <input id="folder" type="file" webkitdirectory style="display:none;">
+              <button id="browse" class="btn-brutal" type="button">BROWSE...</button>
+              <div class="file-name" id="folderName">NO_DIRECTORY_SELECTED</div>
+              <button id="clearFolder" class="btn-brutal btn-icon" type="button" disabled>X</button>
+            </div>
+          </div>
+
+          <div class="control-group">
+            <label class="block-label" for="ocrToken">[03] MINERU_API_TOKEN <span class="hint">(optional)</span></label>
+            <input id="ocrToken" type="password" class="input-brutal" placeholder="Enter API Token...">
+          </div>
+
+          <div class="action-grid">
+            <button id="run" class="btn-brutal btn-primary">RUN_EXTRACTION</button>
+            <button id="copy" class="btn-brutal" disabled>COPY_OUTPUT</button>
+            <button id="preview" class="btn-brutal" type="button" disabled>PREVIEW</button>
+            <button id="history" class="btn-brutal" type="button">HISTORY</button>
+          </div>
+
+          <div class="divider"></div>
+
+          <div class="control-group">
+            <label class="block-label">[04] POST_PROCESS_SPLIT</label>
+            <div class="split-row">
+              <select id="subject" class="input-brutal">
+                <option value="">SELECT_SUBJECT</option>
+                <option value="语文">Chinese</option>
+                <option value="数学">Math</option>
+                <option value="英语">English</option>
+                <option value="物理">Physics</option>
+                <option value="历史">History</option>
+                <option value="生物">Biology</option>
+                <option value="地理">Geography</option>
+                <option value="化学">Chemistry</option>
+                <option value="政治">Politics</option>
+              </select>
+              <button id="split" class="btn-brutal" type="button" disabled>EXECUTE_SPLIT</button>
+            </div>
+          </div>
+
+          <div class="log-container">
+            <div class="log-header">SYSTEM_LOG</div>
+            <div class="log-content" id="log"></div>
+          </div>
         </div>
-      </div>
-    </div>
-    
-    <!-- 右侧面板：识别结果展示 -->
-    <div class="right">
-      <div class="rightTitle">
-        <div id="titleLabel">识别结果</div>
-        <div class="meta" id="meta"></div>
-      </div>
-      <textarea id="output" spellcheck="false" placeholder="识别内容会显示在这里"></textarea>
+      </aside>
+
+      <!-- Right Panel: Output -->
+      <main class="panel output-panel">
+        <div class="panel-header">
+          <h2 id="titleLabel">EXTRACTION_OUTPUT</h2>
+          <div class="meta-info" id="meta"></div>
+        </div>
+        <div class="panel-body output-body">
+          <textarea id="output" class="output-area" spellcheck="false" placeholder="Awaiting extraction data..."></textarea>
+        </div>
+      </main>
     </div>
   </div>
-  
-  <!-- 历史记录模态框 -->
+
+  <!-- History Modal -->
   <div id="historyModal" class="modal" style="display:none;">
-    <div class="modalCard">
-      <div class="modalHeader">
-        <div>历史记录</div>
-        <button id="historyClose" type="button">关闭</button>
+    <div class="modal-card">
+      <div class="modal-header">
+        <h2>EXECUTION_HISTORY</h2>
+        <button id="historyClose" class="btn-brutal btn-icon" type="button">X</button>
       </div>
-      <div class="modalBody">
-        <div id="historyList" class="historyList"></div>
+      <div class="modal-body">
+        <div id="historyList" class="history-list"></div>
       </div>
     </div>
   </div>
+
   <script src="./app.js"></script>
 </body>
 </html>

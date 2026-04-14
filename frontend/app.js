@@ -15,7 +15,7 @@ const log = (m) => {
   el.scrollTop = el.scrollHeight;
 };
 // 设置当前状态显示
-const setStatus = (s) => ($("#status").textContent = s);
+const setStatus = (s) => ($("#statusIndicator").textContent = s);
 
 // 全局状态变量
 let katexLoadPromise = null;
@@ -497,10 +497,6 @@ async function pollResult(jobId) {
       currentHasAnswer = res.hasAnswer || false;
       runGuard.running = false;
       runGuard.ocrDone = true;
-      // 保存 res 数据供标记功能使用
-      if (res.layoutParsingResults) {
-        cachedResData = { result: { layoutParsingResults: res.layoutParsingResults } };
-      }
       updateRunEnabled();
       const tl = $("#titleLabel");
       if (tl) tl.textContent = "识别结果";
@@ -511,7 +507,6 @@ async function pollResult(jobId) {
       $("#copy").disabled = !$("#output").value;
       updateSplitEnabled();
       updatePreviewEnabled();
-      updateMarkEnabled();
       return;
     }
   }
@@ -582,7 +577,6 @@ async function openHistory() {
             $("#copy").disabled = !$("#output").value;
             updateSplitEnabled();
             updatePreviewEnabled();
-            updateMarkEnabled();
             hideHistoryModal();
           } catch (e) {
             log(String(e && e.message ? e.message : e));
@@ -609,7 +603,6 @@ async function openHistory() {
           $("#copy").disabled = !$("#output").value;
           updateSplitEnabled();
           updatePreviewEnabled();
-          updateMarkEnabled();
           hideHistoryModal();
         } catch (e) {
           log(String(e && e.message ? e.message : e));
@@ -638,8 +631,6 @@ async function runOcrPath(path) {
   $("#meta").textContent = "";
   $("#copy").disabled = true;
   $("#log").textContent = "";
-  cachedResData = null;
-  updateMarkEnabled();
 
   setStatus("submitting");
   log("提交任务");
@@ -679,8 +670,6 @@ async function runOcrFolder(files) {
   $("#meta").textContent = "";
   $("#copy").disabled = true;
   $("#log").textContent = "";
-  cachedResData = null;
-  updateMarkEnabled();
 
   setStatus("uploading");
   log("上传文件夹并提交任务");
@@ -733,8 +722,6 @@ async function runOcrFile(file) {
   $("#meta").textContent = "";
   $("#copy").disabled = true;
   $("#log").textContent = "";
-  cachedResData = null;
-  updateMarkEnabled();
 
   setStatus("uploading");
   log("上传文件并提交任务");
@@ -918,528 +905,3 @@ $("#historyModal").addEventListener("click", (e) => {
   if (e.target === $("#historyModal")) hideHistoryModal();
 });
 
-// 标记功能
-let cachedResData = null;
-
-function updateMarkEnabled() {
-  const markEl = $("#mark");
-  if (!markEl) return;
-  markEl.disabled = !currentOutputDir;
-}
-
-async function loadResData() {
-  if (cachedResData) return cachedResData;
-  const jobIdPath = getJobIdPath();
-  if (!jobIdPath) {
-    log("无法获取任务路径");
-    return null;
-  }
-  try {
-    // 获取该任务下的所有文件
-    const resp = await fetch(API_BASE + "/api/history/assets?id=" + encodeURIComponent(jobIdPath));
-    if (!resp.ok) throw new Error("failed to load assets");
-    const data = await resp.json();
-    const files = (data && data.files) || [];
-
-    // 过滤出所有 res_*.txt 文件
-    const resFiles = files.filter(f => f.name && f.name.startsWith("res_") && f.name.endsWith(".txt"));
-
-    log(`找到 res 文件: ${resFiles.length} 个`);
-    
-    const result = { result: { layoutParsingResults: [] } };
-
-    // 遍历所有 res 文件并解析
-    for (const resFile of resFiles) {
-      log(`加载文件: ${resFile.name}`);
-      try {
-        // resFile.url 已经包含了完整路径
-        const resResp = await fetch(API_BASE + "/" + resFile.url);
-        if (!resResp.ok) {
-          log(`加载失败: ${resResp.status}`);
-          continue;
-        }
-        const text = await resResp.text();
-        log(`文件内容长度: ${text.length}`);
-
-        const lines = text.split('\n').filter(line => line.trim());
-        for (const line of lines) {
-          try {
-            const parsed = JSON.parse(line);
-            if (parsed.result?.layoutParsingResults) {
-              // 为每个结果添加来源文件信息
-              for (const layoutResult of parsed.result.layoutParsingResults) {
-                layoutResult._sourceFile = resFile.name;
-                // 同时设置到 parsing_res_list 中的每个 item
-                const parsingResList = layoutResult.prunedResult?.parsing_res_list || [];
-                for (const item of parsingResList) {
-                  item._sourceFile = resFile.name;
-                }
-              }
-              result.result.layoutParsingResults.push(...parsed.result.layoutParsingResults);
-            }
-          } catch (e) {
-            continue;
-          }
-        }
-      } catch (e) {
-        log(`加载 ${resFile.name} 失败: ${e.message}`);
-        continue;
-      }
-    }
-
-    cachedResData = result;
-    return cachedResData;
-  } catch (e) {
-    log("加载res.txt失败: " + e.message);
-    return null;
-  }
-}
-
-function exactMatch(text, query) {
-  if (!text || !query) return false;
-  // 完全匹配：文本中包含查询字符串
-  return text.includes(query);
-}
-
-function fuzzyMatch(text, query) {
-  if (!text || !query) return false;
-  // 规范化：统一换行符，压缩多个空白为单个空格
-  // 处理真实换行符 \n \r 和字面字符串 \n
-  const normalize = (str) => str
-    .replace(/\\n/g, '\n')  // 字面 \n 转真实换行
-    .replace(/\r\n?/g, '\n') // Windows \r\n 和旧 Mac \r 转 \n
-    .replace(/\s+/g, ' ')    // 压缩空白为单个空格
-    .trim();
-  const normalizedText = normalize(text);
-  const normalizedQuery = normalize(query);
-  return normalizedText.toLowerCase().includes(normalizedQuery.toLowerCase());
-}
-
-async function highlightBlocks(blocksWithPage, query) {
-  const jobIdPath = getJobIdPath();
-  if (!jobIdPath) {
-    alert("无法获取任务路径");
-    return;
-  }
-
-  const matchedBlocks = [];
-  
-  for (const { block, pageIndex } of blocksWithPage) {
-    const content = block.block_content || "";
-    if (fuzzyMatch(content, query)) {
-      matchedBlocks.push({ ...block, pageIndex });
-    }
-  }
-
-  if (matchedBlocks.length === 0) {
-    alert("未找到匹配的内容");
-    return;
-  }
-
-  // 获取所有匹配的图片文件
-  const sourceFiles = new Set();
-  for (const block of matchedBlocks) {
-    if (block._sourceFile) {
-      // 从 res_answer_xxx.jpg.txt 或 res_xxx.jpg.txt 中提取图片名称 xxx.jpg
-      let imgName = block._sourceFile.replace(/^res_/, '').replace(/\.txt$/, '');
-      // 去掉 answer_ 前缀（参考答案文件名有此前缀）
-      imgName = imgName.replace(/^answer_/, '');
-      sourceFiles.add(imgName);
-    }
-  }
-
-  try {
-    const resp = await fetch(API_BASE + "/api/history/assets?id=" + encodeURIComponent(jobIdPath));
-    const data = await resp.json();
-    const files = (data && data.files) || [];
-
-    // 过滤出需要高亮的图片文件
-    // 优先使用 imgs/ 目录中的原图
-    let targetFiles = files.filter(f => {
-      if (f.type !== "image") return false;
-      return sourceFiles.has(f.name);
-    });
-
-    // 如果 imgs/ 没有，尝试从 api_image 类型查找
-    if (targetFiles.length === 0) {
-      targetFiles = files.filter(f => {
-        if (f.type !== "api_image") return false;
-        return sourceFiles.has(f.name);
-      });
-    }
-
-    // 如果还是没有，尝试参考答案目录
-    if (targetFiles.length === 0) {
-      targetFiles = files.filter(f => {
-        if (f.type !== "image") return false;
-        if (f.name && f.name.includes("参考答案")) {
-          // JavaScript 获取文件名：取最后一个路径段
-          const basename = f.name.replace(/\\/g, '/').split('/').pop();
-          return sourceFiles.has(basename);
-        }
-        return false;
-      });
-    }
-
-    if (targetFiles.length > 0) {
-      await highlightImages(jobIdPath, targetFiles, matchedBlocks);
-    } else {
-      alert("未找到原始图片文件");
-    }
-
-  } catch (e) {
-    log("标记失败: " + e.message);
-    alert("标记失败: " + e.message);
-  }
-}
-
-async function highlightImages(jobIdPath, sourceFiles, matchedBlocks) {
-  // 按图片名称分组匹配块
-  const blocksByImage = {};
-  for (const block of matchedBlocks) {
-    if (block._sourceFile) {
-      let imgName = block._sourceFile.replace(/^res_/, '').replace(/\.txt$/, '');
-      // 去掉 answer_ 前缀（参考答案文件名有此前缀）
-      imgName = imgName.replace(/^answer_/, '');
-      if (!blocksByImage[imgName]) {
-        blocksByImage[imgName] = [];
-      }
-      blocksByImage[imgName].push(block);
-    }
-  }
-  
-  const highlightWin = window.open("", "_blank");
-  if (!highlightWin) {
-    alert("弹出窗口被拦截，请允许弹出窗口。");
-    return;
-  }
-  
-  // 构建 HTML
-  let htmlContent = `<!DOCTYPE html>
-<html lang="zh-CN">
-<head>
-  <meta charset="utf-8">
-  <title>标记结果 - PaddleDev</title>
-  <style>
-    body{margin:0;padding:20px;background:#333;min-height:100vh;display:flex;flex-direction:column;align-items:center}
-    h2{color:#fff;margin:0 0 20px;font-family:system-ui,sans-serif}
-    .page-container{margin-bottom:30px;background:#fff;box-shadow:0 4px 12px rgba(0,0,0,0.3);border-radius:4px;overflow:hidden}
-    canvas{display:block;max-width:100%;height:auto}
-    .page-label{background:#222;color:#fff;padding:8px 16px;font-family:system-ui,sans-serif;font-size:14px}
-    .loading{color:#fff;font-size:14px}
-  </style>
-</head>
-<body>
-  <h2>标记结果</h2>
-  <div id="pages"><p class="loading">加载中...</p></div>
-  <script>
-    const API_BASE = ${JSON.stringify(API_BASE)};
-    const jobIdPath = ${JSON.stringify(jobIdPath)};
-    const sourceFiles = ${JSON.stringify(sourceFiles)};
-    const blocksByImage = ${JSON.stringify(blocksByImage)};
-    
-    async function loadImageWithHighlight(imgUrl, blocks, canvas) {
-      return new Promise((resolve, reject) => {
-        const img = new Image();
-        img.crossOrigin = "anonymous";
-        img.onload = () => {
-          canvas.width = img.width;
-          canvas.height = img.height;
-          const ctx = canvas.getContext("2d");
-          ctx.drawImage(img, 0, 0);
-          
-          // 绘制高亮
-          ctx.globalAlpha = 0.4;
-          ctx.fillStyle = "#ffff00";
-          for (const block of blocks) {
-            const bbox = block.block_bbox;
-            if (bbox && bbox.length === 4) {
-              ctx.fillRect(bbox[0], bbox[1], bbox[2] - bbox[0], bbox[3] - bbox[1]);
-            }
-          }
-          
-          ctx.globalAlpha = 1;
-          ctx.strokeStyle = "#ff0000";
-          ctx.lineWidth = 3;
-          for (const block of blocks) {
-            const bbox = block.block_bbox;
-            if (bbox && bbox.length === 4) {
-              ctx.strokeRect(bbox[0], bbox[1], bbox[2] - bbox[0], bbox[3] - bbox[1]);
-            }
-          }
-          resolve();
-        };
-        img.onerror = reject;
-        img.src = imgUrl;
-      });
-    }
-    
-    async function init() {
-      const container = document.getElementById("pages");
-      container.innerHTML = "";
-      
-      for (const file of sourceFiles) {
-        const url = API_BASE + "/" + file.url;
-        const blocks = blocksByImage[file.name] || [];
-        
-        const pageDiv = document.createElement("div");
-        pageDiv.className = "page-container";
-        
-        const labelDiv = document.createElement("div");
-        labelDiv.className = "page-label";
-        labelDiv.textContent = file.name + (blocks.length > 0 ? " - " + blocks.length + "处匹配" : "");
-        
-        const canvas = document.createElement("canvas");
-        
-        pageDiv.appendChild(labelDiv);
-        pageDiv.appendChild(canvas);
-        container.appendChild(pageDiv);
-        
-        try {
-          await loadImageWithHighlight(url, blocks, canvas);
-        } catch (e) {
-          canvas.width = 400;
-          canvas.height = 200;
-          const ctx = canvas.getContext("2d");
-          ctx.fillStyle = "#f0f0f0";
-          ctx.fillRect(0, 0, 400, 200);
-          ctx.fillStyle = "#666";
-          ctx.font = "14px sans-serif";
-          ctx.fillText("图片加载失败", 150, 100);
-        }
-      }
-    }
-    
-    init();
-  <\/script>
-</body>
-</html>`;
-  
-  highlightWin.document.write(htmlContent);
-  highlightWin.document.close();
-}
-
-async function highlightPdf(pdfUrl, matchedBlocks, jobIdPath) {
-  let pdfjsLib = window.pdfjsLib;
-  if (!pdfjsLib) {
-    log("加载 PDF.js 库...");
-    const cdnList = [
-      "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js",
-      "https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.min.js",
-      "https://unpkg.com/pdfjs-dist@3.11.174/build/pdf.min.js"
-    ];
-    
-    for (const cdn of cdnList) {
-      try {
-        await new Promise((resolve, reject) => {
-          const s = document.createElement("script");
-          s.src = cdn;
-          s.onload = () => resolve();
-          s.onerror = () => reject(new Error("load failed"));
-          document.head.appendChild(s);
-        });
-        pdfjsLib = window.pdfjsLib;
-        if (pdfjsLib) break;
-      } catch (e) {
-        continue;
-      }
-    }
-    
-    if (!pdfjsLib) {
-      throw new Error("无法加载 PDF.js 库");
-    }
-    
-    try {
-      pdfjsLib.GlobalWorkerOptions.workerSrc = pdfjsLib.GlobalWorkerOptions.workerSrc || 
-        cdnList[0].replace("pdf.min.js", "pdf.worker.min.js");
-    } catch (e) {
-      // worker 可能不需要
-    }
-  }
-  
-  const loadingTask = pdfjsLib.getDocument(pdfUrl);
-  const pdf = await loadingTask.promise;
-  const numPages = pdf.numPages;
-  log(`PDF 共 ${numPages} 页`);
-  
-  const highlightWin = window.open("", "_blank");
-  if (!highlightWin) {
-    alert("弹出窗口被拦截，请允许弹出窗口。");
-    return;
-  }
-  
-  const pageNumbers = new Set();
-  for (const block of matchedBlocks) {
-    const pageInfo = block.pageIndex;
-    if (pageInfo !== undefined && pageInfo !== null) {
-      pageNumbers.add(pageInfo);
-    }
-  }
-  
-  if (pageNumbers.size === 0) {
-    for (let i = 1; i <= numPages; i++) {
-      pageNumbers.add(i);
-    }
-  }
-  
-  const sortedPages = Array.from(pageNumbers).sort((a, b) => a - b);
-  const pageCanvases = [];
-  
-  for (const pageNum of sortedPages) {
-    const page = await pdf.getPage(pageNum);
-    const scale = 1.5;
-    const viewport = page.getViewport({ scale });
-    
-    const canvas = document.createElement("canvas");
-    canvas.width = viewport.width;
-    canvas.height = viewport.height;
-    const ctx = canvas.getContext("2d");
-    
-    await page.render({
-      canvasContext: ctx,
-      viewport: viewport
-    }).promise;
-    
-    pageCanvases.push({ pageNum, canvas, viewport, scale });
-  }
-  
-  for (const { pageNum, canvas, viewport, scale } of pageCanvases) {
-    const ctx = canvas.getContext("2d");
-    
-    ctx.globalAlpha = 0.4;
-    ctx.fillStyle = "#ffff00";
-    
-    for (const block of matchedBlocks) {
-      if (block.pageIndex !== pageNum) continue;
-      const bbox = block.block_bbox;
-      if (bbox && bbox.length === 4) {
-        const x = bbox[0] * scale;
-        const y = bbox[1] * scale;
-        const w = (bbox[2] - bbox[0]) * scale;
-        const h = (bbox[3] - bbox[1]) * scale;
-        ctx.fillRect(x, y, w, h);
-      }
-    }
-    
-    ctx.globalAlpha = 1;
-    ctx.strokeStyle = "#ff0000";
-    ctx.lineWidth = 3 * scale / 1.5;
-    
-    for (const block of matchedBlocks) {
-      if (block.pageIndex !== pageNum) continue;
-      const bbox = block.block_bbox;
-      if (bbox && bbox.length === 4) {
-        const x = bbox[0] * scale;
-        const y = bbox[1] * scale;
-        const w = (bbox[2] - bbox[0]) * scale;
-        const h = (bbox[3] - bbox[1]) * scale;
-        ctx.strokeRect(x, y, w, h);
-      }
-    }
-  }
-  
-  highlightWin.document.write(`<!DOCTYPE html>
-<html lang="zh-CN">
-<head>
-  <meta charset="utf-8">
-  <title>PDF 标记结果 - PaddleDev</title>
-  <style>
-    *{box-sizing:border-box}
-    body{margin:0;padding:20px;background:#333;min-height:100vh;display:flex;flex-direction:column;align-items:center}
-    h2{color:#fff;margin:0 0 20px;font-family:system-ui,sans-serif}
-    .page-container{margin-bottom:30px;background:#fff;box-shadow:0 4px 12px rgba(0,0,0,0.3);border-radius:4px;overflow:hidden}
-    canvas{display:block;max-width:100%;height:auto}
-    .page-label{background:#222;color:#fff;padding:8px 16px;font-family:system-ui,sans-serif;font-size:14px}
-  </style>
-</head>
-<body>
-  <h2>PDF 标记结果</h2>
-  <div id="pages"></div>
-  <script>
-    const pages = ${JSON.stringify(pageCanvases.map(p => ({
-      pageNum: p.pageNum,
-      dataUrl: p.canvas.toDataURL("image/png")
-    })))};
-    const container = document.getElementById("pages");
-    pages.forEach(page => {
-      const div = document.createElement("div");
-      div.className = "page-container";
-      div.innerHTML = '<div class="page-label">第 ' + page.pageNum + ' 页</div>';
-      const img = document.createElement("img");
-      img.src = page.dataUrl;
-      img.alt = "第 " + page.pageNum + " 页";
-      div.appendChild(img);
-      container.appendChild(div);
-    });
-  <\/script>
-</body>
-</html>`);
-  highlightWin.document.close();
-}
-
-function getJobIdPath() {
-  if (!currentOutputDir) return null;
-  const rel = String(currentOutputDir).replace(/\\/g, "/");
-  const idx = rel.toLowerCase().indexOf("/paddlelog/");
-  if (idx >= 0) {
-    const tail = rel.slice(idx + "/paddlelog/".length);
-    const segs = tail.split("/").filter(Boolean);
-    if (segs.length >= 2) return `${segs[0]}/${segs[1]}`;
-  }
-  const segs = rel.split("/").filter(Boolean);
-  if (segs.length >= 2) {
-    const last = segs[segs.length - 1];
-    const prev = segs[segs.length - 2];
-    return `${prev}/${last}`;
-  }
-  return null;
-}
-
-async function doMark() {
-  const query = ($("#markText").value || "").trim();
-  if (!query) {
-    alert("请输入要标记的文字");
-    return;
-  }
-  
-  $("#mark").disabled = true;
-  setStatus("marking");
-  log(`标记: "${query}"`);
-  
-  try {
-    const resData = await loadResData();
-    if (!resData) {
-      throw new Error("无法加载res.txt");
-    }
-    const results = resData.result?.layoutParsingResults || [];
-    const blocksWithPage = [];
-    for (let pageIdx = 0; pageIdx < results.length; pageIdx++) {
-      const result = results[pageIdx];
-      const pageIndex = pageIdx + 1;
-      const parsingResList = result.prunedResult?.parsing_res_list || [];
-      for (const item of parsingResList) {
-        if (item.block_content) {
-          blocksWithPage.push({ block: item, pageIndex });
-        }
-      }
-    }
-    
-    if (blocksWithPage.length === 0) {
-      throw new Error("res.txt中没有找到block_content");
-    }
-    
-    await highlightBlocks(blocksWithPage, query);
-    
-    setStatus("done");
-    log("标记完成");
-  } catch (e) {
-    setStatus("error");
-    log("标记失败: " + e.message);
-  } finally {
-    updateMarkEnabled();
-  }
-}
-
-$("#markText").addEventListener("input", updateMarkEnabled);
-$("#mark").addEventListener("click", doMark);
-updateMarkEnabled();

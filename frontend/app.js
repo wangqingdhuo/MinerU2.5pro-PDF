@@ -483,7 +483,7 @@ async function pollResult(jobId) {
     if (status.progress && (status.progress.totalPages || status.progress.extractedPages)) {
       const tp = status.progress.totalPages ?? "?";
       const ep = status.progress.extractedPages ?? "?";
-      $("#meta").textContent = `pages ${ep}/${tp}`;
+      $("#meta").textContent = `页数 ${ep}/${tp}`;
     }
 
     if (status.state === "failed") {
@@ -503,7 +503,7 @@ async function pollResult(jobId) {
       const elapsed = Math.round((Date.now() - startedAt) / 1000);
       const pageCount = res.pages ?? "?";
       const answerTag = currentHasAnswer ? " · 有参考答案" : "";
-      $("#meta").textContent = `pages ${pageCount} · ${elapsed}s${answerTag}`;
+      $("#meta").textContent = `页数 ${pageCount} · ${elapsed}s${answerTag}`;
       $("#copy").disabled = !$("#output").value;
       updateSplitEnabled();
       updatePreviewEnabled();

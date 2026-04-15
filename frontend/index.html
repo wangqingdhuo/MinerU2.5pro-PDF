@@ -2,117 +2,137 @@
 <html lang="zh-CN">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>MinerU Document Extractor</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>MinerU 文档提取专业版</title>
   <link rel="stylesheet" href="./style.css">
 </head>
 <body>
   <div class="app">
-    <!-- Header -->
-    <header class="top-bar">
+    <!-- 顶部导航栏 -->
+    <header class="top-bar glass">
       <div class="logo">
-        <span class="logo-mark">///</span>
-        <h1>MINERU EXTRACTOR</h1>
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"></path>
+          <polyline points="14 2 14 8 20 8"></polyline>
+          <line x1="16" y1="13" x2="8" y2="13"></line>
+          <line x1="16" y1="17" x2="8" y2="17"></line>
+          <line x1="10" y1="9" x2="8" y2="9"></line>
+        </svg>
+        <h1>MinerU</h1>
       </div>
-      <div class="header-meta">v2.0.0 // INDUSTRIAL BUILD</div>
+      <div class="header-meta">提取专业版</div>
     </header>
 
     <div class="main-content">
-      <!-- Left Panel: Controls -->
+      <!-- 左侧控制面板 -->
       <aside class="panel controls-panel">
         <div class="panel-header">
-          <h2>INPUT_CONTROLS</h2>
-          <span class="status-indicator" id="statusIndicator">IDLE</span>
+          <h2>配置选项</h2>
+          <span class="status-indicator" id="statusIndicator">准备就绪</span>
         </div>
 
         <div class="panel-body">
           <div class="control-group">
-            <label class="block-label" for="path">[01] FOLDER_PATH</label>
-            <input id="path" type="text" class="input-brutal" placeholder="Enter path to directory...">
+            <label class="block-label" for="path">文档目录路径</label>
+            <input id="path" type="text" class="input-apple" placeholder="例如：/Users/admin/Documents">
           </div>
 
           <div class="control-group">
-            <label class="block-label">[02] OR_SELECT_DIRECTORY</label>
+            <label class="block-label">选择本地文件夹</label>
             <div class="file-row">
               <input id="folder" type="file" webkitdirectory style="display:none;">
-              <button id="browse" class="btn-brutal" type="button">BROWSE...</button>
-              <div class="file-name" id="folderName">NO_DIRECTORY_SELECTED</div>
-              <button id="clearFolder" class="btn-brutal btn-icon" type="button" disabled>X</button>
+              <button id="browse" class="btn-apple btn-secondary" type="button">选择文件夹</button>
+              <div class="file-name" id="folderName">未选择文件夹</div>
+              <button id="clearFolder" class="btn-apple btn-icon" type="button" disabled title="清除选择">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+              </button>
             </div>
           </div>
 
           <div class="control-group">
-            <label class="block-label" for="ocrToken">[03] MINERU_API_TOKEN <span class="hint">(optional)</span></label>
-            <input id="ocrToken" type="password" class="input-brutal" placeholder="Enter API Token...">
+            <label class="block-label" for="ocrToken">API 凭证 <span class="hint">(可选)</span></label>
+            <input id="ocrToken" type="password" class="input-apple" placeholder="输入 MinerU Token">
           </div>
 
           <div class="control-group">
-            <label class="block-label" for="language">[04] DOCUMENT_LANGUAGE</label>
-            <select id="language" class="input-brutal">
-              <option value="zh" selected>Chinese (Default)</option>
-              <option value="en">English</option>
-              <option value="japan">Japanese</option>
-              <option value="latin">French / German / Spanish (Latin)</option>
-              <option value="east_slavic">Russian (East Slavic)</option>
-              <option value="cyrillic">Cyrillic Script</option>
-              <option value="auto">Auto Detect</option>
-            </select>
+            <label class="block-label" for="language">文档语言</label>
+            <div class="select-wrapper">
+              <select id="language" class="input-apple">
+                <option value="zh" selected>中文 (默认)</option>
+                <option value="en">英文</option>
+                <option value="japan">日文</option>
+                <option value="latin">法/德/西语 (拉丁语系)</option>
+                <option value="east_slavic">俄语 (东斯拉夫语系)</option>
+                <option value="cyrillic">西里尔字母</option>
+                <option value="auto">自动检测</option>
+              </select>
+            </div>
           </div>
 
           <div class="action-grid">
-            <button id="run" class="btn-brutal btn-primary">RUN_EXTRACTION</button>
-            <button id="copy" class="btn-brutal" disabled>COPY_OUTPUT</button>
-            <button id="preview" class="btn-brutal" type="button" disabled>PREVIEW</button>
-            <button id="history" class="btn-brutal" type="button">HISTORY</button>
+            <button id="run" class="btn-apple btn-primary">开始提取</button>
+            <button id="copy" class="btn-apple btn-secondary" disabled>复制结果</button>
+            <button id="preview" class="btn-apple btn-secondary" type="button" disabled>预览</button>
+            <button id="history" class="btn-apple btn-secondary" type="button">历史记录</button>
           </div>
 
           <div class="divider"></div>
 
           <div class="control-group">
-            <label class="block-label">[05] POST_PROCESS_SPLIT</label>
+            <label class="block-label">后处理：学科分割</label>
             <div class="split-row">
-              <select id="subject" class="input-brutal">
-                <option value="">SELECT_SUBJECT</option>
-                <option value="语文">Chinese</option>
-                <option value="数学">Math</option>
-                <option value="英语">English</option>
-                <option value="物理">Physics</option>
-                <option value="历史">History</option>
-                <option value="生物">Biology</option>
-                <option value="地理">Geography</option>
-                <option value="化学">Chemistry</option>
-                <option value="政治">Politics</option>
-              </select>
-              <button id="split" class="btn-brutal" type="button" disabled>EXECUTE_SPLIT</button>
+              <div class="select-wrapper">
+                <select id="subject" class="input-apple">
+                  <option value="">选择学科</option>
+                  <option value="语文">语文</option>
+                  <option value="数学">数学</option>
+                  <option value="英语">英语</option>
+                  <option value="物理">物理</option>
+                  <option value="历史">历史</option>
+                  <option value="生物">生物</option>
+                  <option value="地理">地理</option>
+                  <option value="化学">化学</option>
+                  <option value="政治">政治</option>
+                </select>
+              </div>
+              <button id="split" class="btn-apple btn-secondary" type="button" disabled>执行分割</button>
             </div>
           </div>
 
+          <!-- 第 3 步：智能查重 -->
+          <div class="control-group">
+            <label class="block-label">智能查重</label>
+            <button id="checkDuplicate" class="btn-apple btn-secondary" type="button" disabled>开始查重</button>
+          </div>
+
           <div class="log-container">
-            <div class="log-header">SYSTEM_LOG</div>
+            <div class="log-header">运行日志</div>
             <div class="log-content" id="log"></div>
           </div>
         </div>
       </aside>
 
-      <!-- Right Panel: Output -->
+      <!-- 右侧结果面板 -->
       <main class="panel output-panel">
         <div class="panel-header">
-          <h2 id="titleLabel">EXTRACTION_OUTPUT</h2>
+          <h2 id="titleLabel">提取结果</h2>
           <div class="meta-info" id="meta"></div>
         </div>
         <div class="panel-body output-body">
-          <textarea id="output" class="output-area" spellcheck="false" placeholder="Awaiting extraction data..."></textarea>
+          <textarea id="output" class="output-area" spellcheck="false" placeholder="解析与提取结果将显示在这里..."></textarea>
         </div>
       </main>
     </div>
   </div>
 
-  <!-- History Modal -->
+  <!-- 历史记录模态框 -->
   <div id="historyModal" class="modal" style="display:none;">
     <div class="modal-card">
       <div class="modal-header">
-        <h2>EXECUTION_HISTORY</h2>
-        <button id="historyClose" class="btn-brutal btn-icon" type="button">X</button>
+        <h2>历史记录</h2>
+        <button id="historyClose" class="btn-apple btn-icon" type="button" title="关闭">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+        </button>
       </div>
       <div class="modal-body">
         <div id="historyList" class="history-list"></div>

@@ -22,7 +22,7 @@ MAX_CONCURRENT_OCR = int(os.environ.get("MAX_CONCURRENT_OCR") or "5")
 # MinerU API 配置
 MINERU_API_BASE = "https://mineru.net"
 MINERU_MODEL = "vlm"
-TOKEN = os.environ.get("MINERU_TOKEN") or ""
+TOKEN = os.environ.get("MINERU_TOKEN") or "eyJ0eXBlIjoiSldUIiwiYWxnIjoiSFM1MTIifQ.eyJqdGkiOiIzNjUwMDcyOSIsInJvbCI6IlJPTEVfUkVHSVNURVIiLCJpc3MiOiJPcGVuWExhYiIsImlhdCI6MTc3NjIxNDQ4MywiY2xpZW50SWQiOiJsa3pkeDU3bnZ5MjJqa3BxOXgydyIsInBob25lIjoiIiwib3BlbklkIjpudWxsLCJ1dWlkIjoiZmFkODY3NzAtYmMyZC00YWMwLWFjZDUtYmUxN2ZlOGIwMTdkIiwiZW1haWwiOiIiLCJleHAiOjE3ODM5OTA0ODN9.8jipIByG4mmmMwlG5-t5CuH6jpLQHc1qOp1C_eqwFkPjv8pR4_7idy1jn3UB4B7q1-zEFDlMfbW0REKJSMad9g"
 # 输出目录，默认 D:\paddlelog
 OUTPUT_ROOT = os.environ.get("PADDLE_LOG_DIR") or r"D:\paddlelog"
 REQUEST_RETRIES = int(os.environ.get("PADDLE_OCR_RETRIES") or "5")
@@ -73,6 +73,35 @@ _jobs_lock = threading.Lock()
 _jobs: dict[str, dict] = {} # OCR 任务
 _coze_jobs_lock = threading.Lock()
 _coze_jobs: dict[str, dict] = {} # Coze 任务
+
+class RateLimiter:
+    """限流器：基于滑动窗口的请求速率限制"""
+    def __init__(self, max_requests: int, period: float):
+        self.max_requests = max_requests
+        self.period = period
+        self.timestamps = []
+        self.lock = threading.Lock()
+
+    def wait(self):
+        with self.lock:
+            now = time.time()
+            # 移除在时间窗口之外的请求记录
+            self.timestamps = [t for t in self.timestamps if now - t < self.period]
+            if len(self.timestamps) >= self.max_requests:
+                # 需要等待直到最早的请求超出时间窗口
+                sleep_time = self.period - (now - self.timestamps[0])
+                if sleep_time > 0:
+                    time.sleep(sleep_time)
+                now = time.time()
+                # 重新过滤（因为等待后可能有更多的请求过期）
+                self.timestamps = [t for t in self.timestamps if now - t < self.period]
+            self.timestamps.append(now)
+
+# 接口限流配置 (根据 MinerU 官网限流策略)
+# 提交任务接口：300 次/分钟
+submit_rate_limiter = RateLimiter(300, 60.0)
+# 获取任务结果接口：1000 次/分钟
+poll_rate_limiter = RateLimiter(1000, 60.0)
 
 
 def _json_bytes(obj) -> bytes:
@@ -497,6 +526,10 @@ def _submit_job_bytes_sync(filename: str, content: bytes, token: str | None = No
         "files": [{"name": filename, "is_ocr": True}],
         "model_version": MINERU_MODEL,
     }
+    
+    # 应用提交流程的限流 (300次/分钟)
+    submit_rate_limiter.wait()
+    
     resp = _request("POST", f"{MINERU_API_BASE}/api/v4/file-urls/batch", json=payload, headers=headers, timeout=60)
     try:
         resp.raise_for_status()
@@ -526,6 +559,9 @@ def _poll_job_sync(job_id: str, local_job_id: str, token: str | None = None) -> 
     headers = {"Authorization": f"Bearer {auth_token}"}
     
     while True:
+        # 应用轮询流程的限流 (1000次/分钟)
+        poll_rate_limiter.wait()
+        
         resp = _request("GET", f"{MINERU_API_BASE}/api/v4/extract-results/batch/{job_id}", headers=headers, timeout=60)
         resp.raise_for_status()
         data = resp.json()

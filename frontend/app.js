@@ -867,6 +867,12 @@ function updateRunEnabled() {
   const hasFile = fileInput && fileInput.files && fileInput.files.length > 0;
   const hasInput = hasFile || !!(pathEl && (pathEl.value || "").trim());
   runEl.disabled = runGuard.running || runGuard.splitting || !hasInput;
+  
+  // 预览按钮：当有上传的文件时可以预览
+  const previewEl = $("#preview");
+  if (previewEl) {
+    previewEl.disabled = !hasFile;
+  }
 }
 
 // 轮询 Coze 任务结果
@@ -942,6 +948,53 @@ $("#output").addEventListener("input", () => {
 });
 updatePreviewEnabled();
 updateRunEnabled();
+
+// ==========================================
+// 预览左侧原文件
+// ==========================================
+let currentPreviewUrl = null;
+
+$("#preview").addEventListener("click", () => {
+  const fileInput = $("#file");
+  if (!fileInput || !fileInput.files || fileInput.files.length === 0) return;
+  
+  const f = fileInput.files[0];
+  const container = $("#pdfPreviewContainer");
+  
+  if (currentPreviewUrl) {
+    URL.revokeObjectURL(currentPreviewUrl);
+  }
+  currentPreviewUrl = URL.createObjectURL(f);
+  
+  container.innerHTML = ""; // clear
+  $("#previewFileName").textContent = f.name;
+  
+  if (f.type === "application/pdf" || f.name.toLowerCase().endsWith(".pdf")) {
+    const iframe = document.createElement("iframe");
+    iframe.src = currentPreviewUrl;
+    iframe.style.width = "100%";
+    iframe.style.height = "100%";
+    iframe.style.border = "none";
+    container.appendChild(iframe);
+  } else if (f.type.startsWith("image/")) {
+    const img = document.createElement("img");
+    img.src = currentPreviewUrl;
+    img.style.maxWidth = "100%";
+    img.style.maxHeight = "100%";
+    img.style.objectFit = "contain";
+    container.appendChild(img);
+  } else {
+    container.innerHTML = "<div style='padding:20px;color:#666;'>不支持预览的文件类型</div>";
+  }
+  
+  $("#controlsBody").style.display = "none";
+  $("#previewBody").style.display = "flex";
+});
+
+$("#backToControls").addEventListener("click", () => {
+  $("#previewBody").style.display = "none";
+  $("#controlsBody").style.display = "flex";
+});
 
 // “复制”按钮点击事件
 $("#copy").addEventListener("click", async () => {

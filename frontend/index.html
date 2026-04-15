@@ -31,7 +31,7 @@
           <span class="status-indicator" id="statusIndicator">准备就绪</span>
         </div>
 
-        <div class="panel-body">
+        <div class="panel-body" id="controlsBody">
           <div class="control-group">
             <label class="block-label" for="path">文档目录路径</label>
             <input id="path" type="text" class="input-apple" placeholder="例如：/Users/admin/Documents">
@@ -110,6 +110,16 @@
             <div class="log-content" id="log"></div>
           </div>
         </div>
+
+        <div class="panel-body" id="previewBody" style="display: none; padding: 0; flex-direction: column; height: 100%;">
+          <div style="padding: 12px 24px; border-bottom: 1px solid var(--border-color); background: var(--bg-color); display: flex; justify-content: space-between; align-items: center;">
+            <span style="font-size: 0.9rem; font-weight: 500; color: var(--text-color);" id="previewFileName">预览文档</span>
+            <button id="backToControls" class="btn-apple btn-secondary" type="button" style="padding: 6px 12px; font-size: 0.8rem;">返回配置</button>
+          </div>
+          <div id="pdfPreviewContainer" style="flex: 1; overflow: hidden; background: #ececec; display: flex; align-items: center; justify-content: center;">
+            <!-- 预览内容将渲染在这里 -->
+          </div>
+        </div>
       </aside>
 
       <!-- 右侧结果面板 -->
@@ -135,7 +145,7 @@
         </button>
       </div>
       <div class="modal-body">
-        <div id="historyList" class="history-list"></div>
+        <div id="historyList" class="historyList"></div>
       </div>
     </div>
   </div>

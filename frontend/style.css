@@ -138,6 +138,7 @@ body {
 .output-body {
   padding: 0;
   overflow: hidden;
+  flex: 1; /* Ensure output-body fills the remaining space of the panel */
 }
 
 /* Controls */

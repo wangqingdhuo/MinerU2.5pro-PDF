@@ -4,7 +4,7 @@ window.onerror = function(msg, url, line, col, error) {
 
 // 后端 API 地址配置
 const API_HOST = window.location.hostname || "127.0.0.1";
-const API_BASE = `http://${API_HOST}:8099`;
+const API_BASE = ""; // 空字符串表示相对路径（同源请求）
 
 // DOM 操作简写工具
 const $ = (s) => document.querySelector(s);

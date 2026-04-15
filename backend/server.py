@@ -14,7 +14,7 @@ from PIL import Image
 
 # 服务器配置
 HOST = "0.0.0.0"
-PORT = 8099
+PORT = int(os.environ.get("PORT", "8000"))
 
 # OCR 并发配置
 MAX_CONCURRENT_OCR = int(os.environ.get("MAX_CONCURRENT_OCR") or "5")
@@ -1407,6 +1407,10 @@ def _create_job_upload(filename: str, content: bytes, token: str | None = None) 
 class Handler(BaseHTTPRequestHandler):
     """自定义 HTTP 请求处理器"""
     protocol_version = "HTTP/1.1"
+    
+    # 获取项目根目录，以便提供前端静态文件服务
+    ROOT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    FRONTEND_DIR = os.path.join(ROOT_DIR, "frontend")
 
     def _send_file(self, file_path: str):
         """发送本地静态文件"""
@@ -1467,6 +1471,45 @@ class Handler(BaseHTTPRequestHandler):
         """处理 GET 请求"""
         try:
             parsed = urlparse(self.path)
+            
+            # 处理静态文件请求
+            if not parsed.path.startswith("/api/") and not parsed.path.startswith("/output/") and parsed.path != "/health":
+                # 默认为 index.html
+                target_path = "/index.html" if parsed.path == "/" else parsed.path
+                
+                # 安全处理路径，防止目录遍历
+                target_path = target_path.lstrip("/")
+                file_path = os.path.abspath(os.path.join(self.FRONTEND_DIR, target_path))
+                
+                # 确保请求的文件在前端目录下
+                if not file_path.startswith(os.path.abspath(self.FRONTEND_DIR)):
+                    self._send(403, _json_bytes({"error": "forbidden"}))
+                    return
+                    
+                if os.path.isfile(file_path):
+                    ctype, _ = mimetypes.guess_type(file_path)
+                    if not ctype:
+                        ctype = "application/octet-stream"
+                    try:
+                        with open(file_path, "rb") as f:
+                            content = f.read()
+                        self.send_response(200)
+                        self.send_header("Content-Type", ctype)
+                        self.send_header("Content-Length", str(len(content)))
+                        self.send_header("Access-Control-Allow-Origin", "*")
+                        self.send_header("Connection", "close")
+                        self.end_headers()
+                        self.wfile.write(content)
+                    except Exception as e:
+                        self._send(500, _json_bytes({"error": str(e)}))
+                else:
+                    self._send(404, _json_bytes({"error": "not_found"}))
+                return
+
+            # ----------------------------------------------------
+            # API 路由
+            # ----------------------------------------------------
+
             # 服务输出目录下的静态文件
             if parsed.path.startswith("/output/"):
                 relative_path = unquote(self.path.split("/output/", 1)[1])

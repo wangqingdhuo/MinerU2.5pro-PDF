@@ -38,12 +38,12 @@
           </div>
 
           <div class="control-group">
-            <label class="block-label">选择本地文件夹</label>
+            <label class="block-label">选择本地文档 (PDF / 图片)</label>
             <div class="file-row">
-              <input id="folder" type="file" webkitdirectory style="display:none;">
-              <button id="browse" class="btn-apple btn-secondary" type="button">选择文件夹</button>
-              <div class="file-name" id="folderName">未选择文件夹</div>
-              <button id="clearFolder" class="btn-apple btn-icon" type="button" disabled title="清除选择">
+              <input id="file" type="file" accept=".pdf,.jpg,.jpeg,.png,.bmp" style="display:none;">
+              <button id="browseFile" class="btn-apple btn-secondary" type="button">选择文件</button>
+              <div class="file-name" id="fileName">未选择文件</div>
+              <button id="clearFile" class="btn-apple btn-icon" type="button" disabled title="清除选择">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
               </button>
             </div>

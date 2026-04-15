@@ -1419,7 +1419,7 @@ def _create_job(path: str, token: str | None = None, language: str = "zh") -> st
     return local_job_id
 
 
-def _create_job_upload(filename: str, content: bytes, token: str | None = None) -> str:
+def _create_job_upload(filename: str, content: bytes, token: str | None = None, language: str = "zh") -> str:
     """创建一个基于上传二进制数据的 OCR 任务"""
     local_job_id = uuid.uuid4().hex
     with _jobs_lock:
@@ -1431,6 +1431,7 @@ def _create_job_upload(filename: str, content: bytes, token: str | None = None) 
             "fileName": filename,
             "fileSize": len(content),
             "token": token,
+            "language": language,
             "_fileContent": content,
         }
     t = threading.Thread(
@@ -1818,7 +1819,10 @@ class Handler(BaseHTTPRequestHandler):
                 # 也支持从 X-PaddleOCR-Token header 获取
                 if not token:
                     token = self.headers.get("X-PaddleOCR-Token") or None
-                job_id = _create_job_upload(filename, content, token)
+                    
+                language = self.headers.get("X-Language", "zh")
+                
+                job_id = _create_job_upload(filename, content, token, language)
                 self._send(200, _json_bytes({"jobId": job_id}))
                 return
 

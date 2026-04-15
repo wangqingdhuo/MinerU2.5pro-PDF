@@ -36,8 +36,10 @@ function updateRunEnabled() {
   const runEl = $("#run");
   if (!runEl) return;
   const pathEl = $("#path");
+  const fileInput = $("#file");
+  const hasFile = fileInput && fileInput.files && fileInput.files.length > 0;
   const hasInput =
-    !!selectedFile || !!(pathEl && (pathEl.value || "").trim());
+    (typeof selectedFolder !== "undefined" && !!selectedFolder) || hasFile || !!(pathEl && (pathEl.value || "").trim());
   runEl.disabled = runGuard.running || runGuard.splitting || !hasInput;
 }
 
@@ -640,7 +642,25 @@ async function runOcrPath(path) {
     body.token = token;
     log("使用自定义 Token");
   }
-  const created = await postJson(`${API_BASE}/api/ocr`, body);
+
+  const headers = { "Content-Type": "application/json" };
+  if (token) {
+    headers["X-PaddleOCR-Token"] = token;
+  }
+  const langEl = $("#language");
+  if (langEl && langEl.value) {
+    headers["X-Language"] = langEl.value;
+  }
+
+  const resp = await fetch(`${API_BASE}/api/ocr`, {
+    method: "POST",
+    headers: headers,
+    body: JSON.stringify(body)
+  });
+  const text = await resp.text();
+  if (!resp.ok) throw new Error(text || String(resp.status));
+  const created = JSON.parse(text);
+
   const jobId = created.jobId;
   log(`jobId=${jobId}`);
   await pollResult(jobId);
@@ -722,13 +742,18 @@ async function runOcrFolder(files) {
 
 // 基于文件上传运行 OCR
 async function runOcrFile(file) {
+  const ext = file.name.toLowerCase();
+  if (!ext.endsWith('.jpg') && !ext.endsWith('.png') && !ext.endsWith('.jpeg') && !ext.endsWith('.pdf') && !ext.endsWith('.bmp')) {
+    throw new Error("仅支持上传图片或PDF文件");
+  }
+
   $("#output").value = "";
   $("#meta").textContent = "";
   $("#copy").disabled = true;
   $("#log").textContent = "";
 
   setStatus("uploading");
-  log("上传文件并提交任务");
+  log(`正在上传文件: ${file.name}`);
   const fd = new FormData();
   fd.append("file", file, file.name);
 
@@ -742,6 +767,10 @@ async function runOcrFile(file) {
   const headers = {};
   if (token) {
     headers["X-PaddleOCR-Token"] = token;
+  }
+  const langEl = $("#language");
+  if (langEl && langEl.value) {
+    headers["X-Language"] = langEl.value;
   }
 
   const resp = await fetch(`${API_BASE}/api/ocr/upload`, {
@@ -760,6 +789,7 @@ async function runOcrFile(file) {
 // “识别”按钮点击事件
 $("#run").addEventListener("click", async () => {
   const path = $("#path").value.trim();
+  const fileInput = $("#file");
   try {
     if (runGuard.running) {
       alert("正在识别，请等待完成后再开始下一个文件");
@@ -780,8 +810,13 @@ $("#run").addEventListener("click", async () => {
       await runOcrFolder(selectedFolder);
       return;
     }
+    if (fileInput && fileInput.files && fileInput.files.length > 0) {
+      // 上传单文件
+      await runOcrFile(fileInput.files[0]);
+      return;
+    }
     if (!path) {
-      alert("请选择文件夹或输入文件夹路径");
+      alert("请选择文件、文件夹或输入本地路径");
       return;
     }
     await runOcrPath(path);
@@ -793,17 +828,34 @@ $("#run").addEventListener("click", async () => {
   }
 });
 
-// 文件夹选择相关事件
-$("#browse").addEventListener("click", () => $("#folder").click());
-$("#folder").addEventListener("change", (e) => {
+// 绑定事件
+$("#browseFile").addEventListener("click", () => {
+  $("#file").click();
+});
+
+$("#file").addEventListener("change", (e) => {
   const files = e.target.files;
-  setSelectedFolder(files);
+  if (files && files.length > 0) {
+    const f = files[0];
+    $("#fileName").textContent = f.name;
+    $("#fileName").title = f.name;
+    $("#clearFile").disabled = false;
+    $("#path").value = ""; // 清空路径框，以文件上传为准
+  } else {
+    clearFile();
+  }
+  updateRunEnabled();
 });
-$("#clearFolder").addEventListener("click", () => {
-  $("#folder").value = "";
-  setSelectedFolder(null);
-});
-setSelectedFolder(null);
+
+$("#clearFile").addEventListener("click", clearFile);
+
+function clearFile() {
+  $("#file").value = "";
+  $("#fileName").textContent = "未选择文件";
+  $("#fileName").title = "";
+  $("#clearFile").disabled = true;
+  updateRunEnabled();
+}
 $("#path").addEventListener("input", () => updateRunEnabled());
 
 // 更新"识别"按钮的启用状态
@@ -811,8 +863,9 @@ function updateRunEnabled() {
   const runEl = $("#run");
   if (!runEl) return;
   const pathEl = $("#path");
-  const hasInput =
-    !!selectedFolder || !!(pathEl && (pathEl.value || "").trim());
+  const fileInput = $("#file");
+  const hasFile = fileInput && fileInput.files && fileInput.files.length > 0;
+  const hasInput = hasFile || !!(pathEl && (pathEl.value || "").trim());
   runEl.disabled = runGuard.running || runGuard.splitting || !hasInput;
 }
 
@@ -908,4 +961,64 @@ $("#historyClose").addEventListener("click", hideHistoryModal);
 $("#historyModal").addEventListener("click", (e) => {
   if (e.target === $("#historyModal")) hideHistoryModal();
 });
+
+// ==========================================
+// 查重功能
+// ==========================================
+function updateDuplicateCheckEnabled() {
+  const checkEl = $("#checkDuplicate");
+  if (!checkEl) return;
+  // 直接读取当前文本框中的文本（可能已被用户修改，或者经过了“分割”步骤被更新过）
+  const text = $("#output").value.trim();
+  checkEl.disabled = !text;
+}
+
+async function doDuplicateCheck() {
+  const text = $("#output").value.trim();
+  if (!text) {
+    alert("没有提取的文本可供查重");
+    return;
+  }
+  
+  $("#checkDuplicate").disabled = true;
+  setStatus("checking");
+  log("开始查重...");
+  
+  try {
+    // 查重发送的直接就是 text（也就是当前右侧面板显示的最终文本）
+    const resp = await fetch(API_BASE + "/api/check", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({ text })
+    });
+    
+    if (!resp.ok) {
+      const errText = await resp.text();
+      throw new Error(errText || String(resp.status));
+    }
+    
+    const data = await resp.json();
+    log(`查重完成: 总共 ${data.total} 题，重复 ${data.success_count} 题，未重复 ${data.failed_count} 题`);
+    
+    // 更新结果回显到文本框
+    if (data.marked_txt) {
+      $("#output").value = data.marked_txt;
+    }
+    setStatus("done");
+  } catch (e) {
+    setStatus("error");
+    log("查重失败: " + e.message);
+  } finally {
+    updateDuplicateCheckEnabled();
+  }
+}
+
+const checkDuplicateBtn = $("#checkDuplicate");
+if (checkDuplicateBtn) {
+  checkDuplicateBtn.addEventListener("click", doDuplicateCheck);
+}
+$("#output").addEventListener("input", updateDuplicateCheckEnabled);
+updateDuplicateCheckEnabled();
 

@@ -132,10 +132,12 @@ function updateSplitEnabled() {
 
 // 更新“预览”按钮的启用状态
 function updatePreviewEnabled() {
+  // 预览按钮：必须提取完毕有了结果（右侧文本框有内容）且上传了文件，才能开启预览
   const previewEl = $("#preview");
-  const outEl = $("#output");
-  if (!previewEl || !outEl) return;
-  previewEl.disabled = !(outEl.value || "").trim();
+  if (previewEl) {
+    const outEl = $("#output");
+    previewEl.disabled = !(outEl && outEl.value.trim());
+  }
 }
 
 // 打开预览窗口，处理 Markdown 渲染和公式
@@ -867,12 +869,9 @@ function updateRunEnabled() {
   const hasFile = fileInput && fileInput.files && fileInput.files.length > 0;
   const hasInput = hasFile || !!(pathEl && (pathEl.value || "").trim());
   runEl.disabled = runGuard.running || runGuard.splitting || !hasInput;
-  
-  // 预览按钮：当有上传的文件时可以预览
-  const previewEl = $("#preview");
-  if (previewEl) {
-    previewEl.disabled = !hasFile;
-  }
+
+  // 预览按钮：依赖于 updatePreviewEnabled
+  updatePreviewEnabled();
 }
 
 // 轮询 Coze 任务结果
@@ -950,51 +949,138 @@ updatePreviewEnabled();
 updateRunEnabled();
 
 // ==========================================
-// 预览左侧原文件
+// 打开预览窗口 (左右分屏：左边源文件，右边提取后的 Markdown)
 // ==========================================
-let currentPreviewUrl = null;
+function openPreviewWindow() {
+  try {
+    const content = $("#output").value || "";
+    console.log("Opening preview for content length:", content.length);
 
-$("#preview").addEventListener("click", () => {
-  const fileInput = $("#file");
-  if (!fileInput || !fileInput.files || fileInput.files.length === 0) return;
-  
-  const f = fileInput.files[0];
-  const container = $("#pdfPreviewContainer");
-  
-  if (currentPreviewUrl) {
-    URL.revokeObjectURL(currentPreviewUrl);
-  }
-  currentPreviewUrl = URL.createObjectURL(f);
-  
-  container.innerHTML = ""; // clear
-  $("#previewFileName").textContent = f.name;
-  
-  if (f.type === "application/pdf" || f.name.toLowerCase().endsWith(".pdf")) {
-    const iframe = document.createElement("iframe");
-    iframe.src = currentPreviewUrl;
-    iframe.style.width = "100%";
-    iframe.style.height = "100%";
-    iframe.style.border = "none";
-    container.appendChild(iframe);
-  } else if (f.type.startsWith("image/")) {
-    const img = document.createElement("img");
-    img.src = currentPreviewUrl;
-    img.style.maxWidth = "100%";
-    img.style.maxHeight = "100%";
-    img.style.objectFit = "contain";
-    container.appendChild(img);
-  } else {
-    container.innerHTML = "<div style='padding:20px;color:#666;'>不支持预览的文件类型</div>";
-  }
-  
-  $("#controlsBody").style.display = "none";
-  $("#previewBody").style.display = "flex";
-});
+    const previewWin = window.open("", "_blank");
+    if (!previewWin) {
+      alert("弹出窗口被拦截，请允许弹出窗口。");
+      return;
+    }
 
-$("#backToControls").addEventListener("click", () => {
-  $("#previewBody").style.display = "none";
-  $("#controlsBody").style.display = "flex";
-});
+    // 处理内容：将本地图片路径替换为后端可访问的 URL
+    const processedContent = content.replace(/src="([^"]+)"/g, (match, p1) => {
+      if (p1.startsWith("http") || p1.startsWith("data:")) return match;
+      if (currentOutputDir && p1.startsWith("output/imgs/")) {
+        const fullUrl = `${API_BASE}/${currentOutputDir}/${p1}`;
+        return `src="${fullUrl}"`;
+      }
+      return match;
+    });
+
+    const fileInput = $("#file");
+    const hasLocalFile = fileInput && fileInput.files && fileInput.files.length > 0;
+    let localFileUrl = "";
+    let isPdf = false;
+
+    if (hasLocalFile) {
+      const f = fileInput.files[0];
+      localFileUrl = URL.createObjectURL(f);
+      isPdf = f.type === "application/pdf" || f.name.toLowerCase().endsWith(".pdf");
+    }
+
+    // 生成左右分屏的 HTML
+    const htmlContent = `<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <title>MinerU 预览</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { 
+      font-family: -apple-system, BlinkMacSystemFont, "SF Pro SC", "Helvetica Neue", sans-serif;
+      background: #f5f5f7; color: #1d1d1f; height: 100vh; display: flex; flex-direction: column; overflow: hidden;
+    }
+    header {
+      background: rgba(255,255,255,0.9); padding: 12px 24px; border-bottom: 1px solid #e5e5e5;
+      font-weight: 600; flex: 0 0 auto;
+    }
+    .container {
+      display: flex; flex: 1; overflow: hidden;
+    }
+    .panel {
+      flex: 1; overflow: auto; padding: 20px;
+    }
+    .left-panel {
+      border-right: 1px solid #e5e5e5; background: #e8e8ed; display: flex; align-items: center; justify-content: center;
+    }
+    .right-panel {
+      background: #ffffff; line-height: 1.6; font-size: 15px; padding: 30px;
+    }
+    iframe { width: 100%; height: 100%; border: none; }
+    img.preview-img { max-width: 100%; height: auto; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+    
+    /* Markdown 基础样式 */
+    .md-content h1, .md-content h2, .md-content h3 { margin-top: 24px; margin-bottom: 12px; }
+    .md-content p { margin-bottom: 16px; }
+    .md-content img { max-width: 100%; height: auto; border-radius: 4px; margin: 10px 0; }
+    .md-content pre { background: #f5f5f7; padding: 16px; border-radius: 8px; overflow-x: auto; }
+    .md-content code { font-family: "SF Mono", monospace; font-size: 0.9em; background: #f5f5f7; padding: 2px 4px; border-radius: 4px; }
+  </style>
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex/dist/katex.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/katex/dist/katex.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/katex/dist/contrib/auto-render.min.js"></script>
+</head>
+<body>
+  <header>文档与解析结果对照预览</header>
+  <div class="container">
+    <!-- 左侧：原始文件 -->
+    <div class="panel left-panel">
+      ${hasLocalFile 
+        ? (isPdf 
+            ? `<iframe src="${localFileUrl}"></iframe>` 
+            : `<img class="preview-img" src="${localFileUrl}" />`)
+        : `<div style="color:#86868b;">暂无本地源文件供预览，请在主页选择文件。</div>`
+      }
+    </div>
+    
+    <!-- 右侧：Markdown 解析结果 -->
+    <div class="panel right-panel">
+      <div id="md-render" class="md-content"></div>
+    </div>
+  </div>
+
+  <script>
+    const rawContent = ${JSON.stringify(processedContent)};
+    const mdContainer = document.getElementById("md-render");
+    
+    // 渲染 Markdown
+    mdContainer.innerHTML = marked.parse(rawContent);
+    
+    // 渲染数学公式 (KaTeX)
+    renderMathInElement(mdContainer, {
+      delimiters: [
+        {left: "$$", right: "$$", display: true},
+        {left: "$", right: "$", display: false},
+        {left: "\\\\(", right: "\\\\)", display: false},
+        {left: "\\\\[", right: "\\\\]", display: true}
+      ],
+      throwOnError: false
+    });
+  <\/script>
+</body>
+</html>`;
+
+    previewWin.document.write(htmlContent);
+    previewWin.document.close();
+
+    // 释放 URL 对象避免内存泄漏
+    previewWin.addEventListener('unload', () => {
+      if (localFileUrl) URL.revokeObjectURL(localFileUrl);
+    });
+
+  } catch (e) {
+    console.error("Preview error:", e);
+    alert("预览生成失败: " + e.message);
+  }
+}
+
+$("#preview").addEventListener("click", () => openPreviewWindow());
 
 // “复制”按钮点击事件
 $("#copy").addEventListener("click", async () => {

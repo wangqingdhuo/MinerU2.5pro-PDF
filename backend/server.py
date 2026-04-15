@@ -16,9 +16,6 @@ from PIL import Image
 HOST = "0.0.0.0"
 PORT = int(os.environ.get("PORT", "8000"))
 
-# OCR 并发配置
-MAX_CONCURRENT_OCR = int(os.environ.get("MAX_CONCURRENT_OCR") or "5")
-
 # MinerU API 配置
 MINERU_API_BASE = "https://mineru.net"
 MINERU_MODEL = "vlm"
@@ -73,35 +70,6 @@ _jobs_lock = threading.Lock()
 _jobs: dict[str, dict] = {} # OCR 任务
 _coze_jobs_lock = threading.Lock()
 _coze_jobs: dict[str, dict] = {} # Coze 任务
-
-class RateLimiter:
-    """限流器：基于滑动窗口的请求速率限制"""
-    def __init__(self, max_requests: int, period: float):
-        self.max_requests = max_requests
-        self.period = period
-        self.timestamps = []
-        self.lock = threading.Lock()
-
-    def wait(self):
-        with self.lock:
-            now = time.time()
-            # 移除在时间窗口之外的请求记录
-            self.timestamps = [t for t in self.timestamps if now - t < self.period]
-            if len(self.timestamps) >= self.max_requests:
-                # 需要等待直到最早的请求超出时间窗口
-                sleep_time = self.period - (now - self.timestamps[0])
-                if sleep_time > 0:
-                    time.sleep(sleep_time)
-                now = time.time()
-                # 重新过滤（因为等待后可能有更多的请求过期）
-                self.timestamps = [t for t in self.timestamps if now - t < self.period]
-            self.timestamps.append(now)
-
-# 接口限流配置 (根据 MinerU 官网限流策略)
-# 提交任务接口：300 次/分钟
-submit_rate_limiter = RateLimiter(300, 60.0)
-# 获取任务结果接口：1000 次/分钟
-poll_rate_limiter = RateLimiter(1000, 60.0)
 
 
 def _json_bytes(obj) -> bytes:
@@ -527,9 +495,6 @@ def _submit_job_bytes_sync(filename: str, content: bytes, token: str | None = No
         "model_version": MINERU_MODEL,
     }
     
-    # 应用提交流程的限流 (300次/分钟)
-    submit_rate_limiter.wait()
-    
     resp = _request("POST", f"{MINERU_API_BASE}/api/v4/file-urls/batch", json=payload, headers=headers, timeout=60)
     try:
         resp.raise_for_status()
@@ -559,9 +524,6 @@ def _poll_job_sync(job_id: str, local_job_id: str, token: str | None = None) -> 
     headers = {"Authorization": f"Bearer {auth_token}"}
     
     while True:
-        # 应用轮询流程的限流 (1000次/分钟)
-        poll_rate_limiter.wait()
-        
         resp = _request("GET", f"{MINERU_API_BASE}/api/v4/extract-results/batch/{job_id}", headers=headers, timeout=60)
         resp.raise_for_status()
         data = resp.json()
@@ -741,16 +703,15 @@ def _process_folder_sync(folder_path: str, base_dir: str, folder_name: str, loca
     if total_images == 0:
         raise RuntimeError(f"文件夹中没有找到图片: {folder_path}")
 
-    log_msg = f"找到 {total_images} 张图片，开始并发处理（最大 {MAX_CONCURRENT_OCR} 并发）"
+    log_msg = f"找到 {total_images} 张图片，开始并发处理"
     _update_job(local_job_id, {"log": log_msg})
 
     with _jobs_lock:
         job = _jobs.get(local_job_id, {})
     language = job.get("language", "zh")
 
-    # 使用 ThreadPoolExecutor 并发处理
     processed_results = []
-    with ThreadPoolExecutor(max_workers=MAX_CONCURRENT_OCR) as executor:
+    with ThreadPoolExecutor() as executor:
         # 提交所有任务
         future_to_img = {
             executor.submit(_process_single_image, img_path, base_dir, folder_name, local_job_id, token=token, language=language): img_path
@@ -838,9 +799,8 @@ def _process_folder_sync(folder_path: str, base_dir: str, folder_name: str, loca
         # 复制参考答案PDF
         _copy_pdfs_from_folder(answer_folder, answer_pdfs_dir)
 
-        # 并发处理参考答案图片
         answer_processed = []
-        with ThreadPoolExecutor(max_workers=MAX_CONCURRENT_OCR) as executor:
+        with ThreadPoolExecutor() as executor:
             future_to_img = {
                 executor.submit(_process_single_image, img_path, os.path.join(base_dir, "参考答案"), folder_name, local_job_id, token=token, language=language): img_path
                 for img_path in answer_images

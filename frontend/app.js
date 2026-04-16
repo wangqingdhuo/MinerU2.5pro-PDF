@@ -291,12 +291,12 @@ function openPreviewWindow() {
             originalEl.textContent = "无原始文件";
             return;
           }
-          // 优先选择合并PDF；其次选择原始PDF；最后选择第一张图片
+          // 只选择 PDF（优先合并PDF；其次原始PDF）
           const mergedPdf = files.find(f => f.type === "merged_pdf");
           const pdf = files.find(f => f.type === "pdf");
-          const toShow = mergedPdf || pdf || files.find(f => f.type === "image" || f.type === "api_image");
+          const toShow = mergedPdf || pdf;
           if (!toShow) {
-            originalEl.textContent = "无可预览文件";
+            originalEl.textContent = "无可预览 PDF（请确认任务目录中存在 merged.pdf 或原始 pdf）";
             return;
           }
           if (toShow.type === "merged_pdf" || toShow.type === "pdf") {
@@ -307,12 +307,6 @@ function openPreviewWindow() {
             iframe.style.minHeight = "100%";
             iframe.style.border = "none";
             originalEl.appendChild(iframe);
-          } else {
-            const img = document.createElement("img");
-            img.src = apiBase + "/" + toShow.url;
-            img.style.width = "100%";
-            img.style.height = "auto";
-            originalEl.appendChild(img);
           }
         } catch (e) {
           originalEl.textContent = "加载原始文件失败";

@@ -152,17 +152,7 @@ function openPreviewWindow() {
       return;
     }
 
-    // 处理内容：将本地图片路径替换为后端可访问的 URL
-    const processedContent = content.replace(/src="([^"]+)"/g, (match, p1) => {
-      // 跳过远程 URL
-      if (p1.startsWith("http")) return match;
-      
-      // 提取相对于 OUTPUT_ROOT 的路径
-      const relativePart = p1.split("/paddlelog/").pop();
-      
-      // 构造最终的后端服务 URL
-    return `src="${API_BASE}/output/${relativePart}"`;
-  });
+    const previewContent = content;
 
   // 计算当前任务的 ID 路径，用于加载原始文件（PDF/图片）
   let jobIdPath = null;
@@ -184,7 +174,7 @@ function openPreviewWindow() {
   }
 
   // 将内容和数据传递给新窗口
-  previewWin.previewData = processedContent;
+  previewWin.previewData = previewContent;
   previewWin.sourcesData = sources; // 传递所有可用的 KaTeX 来源
 
   // 构造预览页面的 HTML
@@ -277,6 +267,88 @@ function openPreviewWindow() {
         });
       }
 
+      function escapeHtml(s) {
+        return String(s)
+          .replace(/&/g, "&amp;")
+          .replace(/</g, "&lt;")
+          .replace(/>/g, "&gt;")
+          .replace(/"/g, "&quot;")
+          .replace(/'/g, "&#39;");
+      }
+
+      function mdToHtml(md) {
+        const lines = String(md || "").replace(/\\r\\n/g, "\\n").split("\\n");
+        const out = [];
+        let buf = [];
+
+        const flushPara = () => {
+          if (!buf.length) return;
+          const text = buf.join(" ").trim();
+          if (!text) {
+            buf = [];
+            return;
+          }
+          out.push("<p>" + renderInline(text) + "</p>");
+          buf = [];
+        };
+
+        const renderInline = (text) => {
+          let t = escapeHtml(text);
+          t = t.replace(/!\\[([^\\]]*)\\]\\(([^)]+)\\)/g, (m, alt, src) => {
+            const a = escapeHtml(alt || "");
+            const u = escapeHtml(String(src || "").trim());
+            return "<img alt=\"" + a + "\" src=\"" + u + "\">";
+          });
+          t = t.replace(/\\[([^\\]]+)\\]\\(([^)]+)\\)/g, (m, label, href) => {
+            const l = escapeHtml(label || "");
+            const u = escapeHtml(String(href || "").trim());
+            return "<a href=\"" + u + "\" target=\"_blank\" rel=\"noopener noreferrer\">" + l + "</a>";
+          });
+          t = t.replace(/\\*\\*([^*]+)\\*\\*/g, "<strong>$1</strong>");
+          t = t.replace(/\\*([^*]+)\\*/g, "<em>$1</em>");
+          return t;
+        };
+
+        for (const rawLine of lines) {
+          const line = rawLine || "";
+          const mHeading = line.match(/^(#{1,6})\\s+(.*)$/);
+          if (mHeading) {
+            flushPara();
+            const level = mHeading[1].length;
+            out.push("<h" + level + ">" + renderInline(mHeading[2] || "") + "</h" + level + ">");
+            continue;
+          }
+
+          if (!line.trim()) {
+            flushPara();
+            continue;
+          }
+
+          buf.push(line.trim());
+        }
+        flushPara();
+        return out.join("\\n");
+      }
+
+      function fixImgUrls(rootEl) {
+        if (!rootEl) return;
+        const imgs = Array.from(rootEl.querySelectorAll("img"));
+        for (const img of imgs) {
+          const src = (img.getAttribute("src") || "").trim();
+          if (!src) continue;
+          if (src.startsWith("http") || src.startsWith("data:") || src.startsWith("blob:")) continue;
+          if (src.startsWith("output/imgs/")) {
+            if (jobIdPath) {
+              img.setAttribute("src", apiBase + "/output/" + jobIdPath + "/" + src);
+            }
+            continue;
+          }
+          if (src.startsWith("output/")) {
+            img.setAttribute("src", apiBase + "/" + src);
+          }
+        }
+      }
+
       // 渲染左侧原始文件（优先使用合并PDF，否则使用原始PDF或图片）
       async function renderOriginal() {
         if (!jobIdPath) {
@@ -316,6 +388,8 @@ function openPreviewWindow() {
       async function init() {
         // 渲染左侧原始文件
         renderOriginal();
+        contentEl.innerHTML = mdToHtml(window.previewData || "");
+        fixImgUrls(contentEl);
 
         // 滚动边界处理：当两个面板都到达底/顶后，继续滚动将滚动整个页面
         function canScroll(el, dy) {

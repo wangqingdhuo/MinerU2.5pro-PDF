@@ -266,6 +266,23 @@ def _safe_folder_name(name: str) -> str:
     return base
 
 
+def _safe_file_name(name: str) -> str:
+    base = name.strip()
+    if not base:
+        base = "upload"
+    base = base.replace("\\", "/").split("/")[-1]
+    base = re.sub(r"[\\/:*?\"<>|]+", "_", base)
+    base = re.sub(r"\s+", " ", base).strip()
+    if base.endswith("."):
+        base = base.rstrip(".")
+    if not base:
+        base = "upload"
+    if len(base) > 180:
+        root, ext = os.path.splitext(base)
+        base = (root[:160] + ext) if ext else root[:180]
+    return base
+
+
 def _safe_ffff(microseconds: int) -> int:
     """确保毫秒部分在 0-9999 范围内"""
     if microseconds < 0:
@@ -465,7 +482,7 @@ def _extract_page_from_filename(filename: str) -> str:
     return basename
 
 
-def _submit_job_sync(path: str, is_folder: bool = False, token: str | None = None, language: str = "zh") -> str:
+def _submit_job_sync(path: str, is_folder: bool = False, token: str | None = None, language: str = "ch") -> str:
     """同步提交 OCR 任务（通过本地文件路径）"""
     if path.startswith("http"):
         raise RuntimeError("HTTP URLs are temporarily not supported. Please upload files directly.")
@@ -474,7 +491,7 @@ def _submit_job_sync(path: str, is_folder: bool = False, token: str | None = Non
     return _submit_job_bytes_sync(os.path.basename(path), content, token, language)
 
 
-def _submit_job_bytes_sync(filename: str, content: bytes, token: str | None = None, language: str = "zh") -> str:
+def _submit_job_bytes_sync(filename: str, content: bytes, token: str | None = None, language: str = "ch") -> str:
     """同步提交 OCR 任务（通过上传的二进制数据）"""
     if MAX_UPLOAD_BYTES is not None and len(content) > MAX_UPLOAD_BYTES:
         raise RuntimeError(
@@ -620,7 +637,7 @@ def _process_mineru_zip(
     return {"pages": 1, "markdown_parts": [md_replaced], "txt_parts": [txt_replaced]}
 
 
-def _process_single_image(img_path: str, base_dir: str, folder_name: str, local_job_id: str, token: str | None = None, language: str = "zh") -> dict | None:
+def _process_single_image(img_path: str, base_dir: str, folder_name: str, local_job_id: str, token: str | None = None, language: str = "ch") -> dict | None:
     """处理单张图片，返回结果或None（失败时）"""
     img_basename = os.path.basename(img_path)
     try:
@@ -708,7 +725,7 @@ def _process_folder_sync(folder_path: str, base_dir: str, folder_name: str, loca
 
     with _jobs_lock:
         job = _jobs.get(local_job_id, {})
-    language = job.get("language", "zh")
+    language = job.get("language", "ch")
 
     processed_results = []
     with ThreadPoolExecutor() as executor:
@@ -1273,14 +1290,30 @@ def _run_ocr(local_job_id: str) -> None:
             )
         else:
             # 单文件处理模式
-            language = job.get("language", "zh")
-            if job.get("fileName"):
-                # 从 job 中获取文件内容（需要先保存）
-                file_content = job.get("_fileContent")
-                if file_content:
-                    remote_job_id = _submit_job_bytes_sync(job["fileName"], file_content, token, language)
+            language = job.get("language", "ch")
+            original_name = job.get("fileName") or (os.path.basename(path) if path else "job")
+            safe_folder_name = _safe_folder_name(original_name)
+            base_dir = os.path.join(OUTPUT_ROOT, safe_folder_name, local_job_id)
+            os.makedirs(base_dir, exist_ok=True)
+
+            file_content = job.get("_fileContent")
+            if file_content and job.get("fileName"):
+                safe_file_name = _safe_file_name(job["fileName"])
+                _, ext = os.path.splitext(safe_file_name)
+                ext = ext.lower()
+                if ext == ".pdf":
+                    pdf_dir = os.path.join(base_dir, "pdfs")
+                    os.makedirs(pdf_dir, exist_ok=True)
+                    _write_bytes(os.path.join(pdf_dir, safe_file_name), file_content)
                 else:
-                    remote_job_id = _submit_job_sync(path or "", token=token, language=language)
+                    imgs_dir = os.path.join(base_dir, "imgs")
+                    os.makedirs(imgs_dir, exist_ok=True)
+                    _write_bytes(os.path.join(imgs_dir, safe_file_name), file_content)
+
+            _update_job(local_job_id, {"outputDir": base_dir, "folderName": safe_folder_name})
+
+            if job.get("fileName") and file_content:
+                remote_job_id = _submit_job_bytes_sync(job["fileName"], file_content, token, language)
             else:
                 remote_job_id = _submit_job_sync(path or "", token=token, language=language)
             
@@ -1293,13 +1326,7 @@ def _run_ocr(local_job_id: str) -> None:
             zip_resp = _request("GET", zip_url, timeout=300)
             zip_resp.raise_for_status()
             
-            # 4. 准备本地保存目录
-            folder_name = job.get("fileName") or (os.path.basename(path) if path else "job")
-            folder_name = _safe_folder_name(folder_name)
-
-            base_dir = os.path.join(OUTPUT_ROOT, folder_name, local_job_id)
-            os.makedirs(base_dir, exist_ok=True)
-            base_name = os.path.splitext(folder_name)[0] or folder_name
+            base_name = os.path.splitext(safe_folder_name)[0] or safe_folder_name
 
             # 5. 处理并保存最终结果
             _update_job(local_job_id, {"state": "saving", "outputDir": base_dir})
@@ -1307,7 +1334,7 @@ def _run_ocr(local_job_id: str) -> None:
                 zip_resp.content,
                 base_dir=base_dir,
                 base_name=base_name,
-                folder_name=folder_name,
+                folder_name=safe_folder_name,
                 local_job_id=local_job_id,
             )
             
@@ -1316,14 +1343,6 @@ def _run_ocr(local_job_id: str) -> None:
             merged_txt = "\n\n".join(saved["txt_parts"])
             _write_text(os.path.join(base_dir, "ocr.md"), merged_md)
             _write_text(os.path.join(base_dir, "ocr.txt"), merged_txt)
-
-            # 后台生成合并PDF
-            def generate_merged_pdf_async():
-                try:
-                    _ensure_merged_pdf(base_dir, folder_name, local_job_id)
-                except Exception as e:
-                    print(f"[PDF] 后台生成合并PDF失败: {e}")
-            threading.Thread(target=generate_merged_pdf_async, daemon=True).start()
 
             # 6. 更新任务为完成
             _update_job(
@@ -1334,7 +1353,8 @@ def _run_ocr(local_job_id: str) -> None:
                         "text": merged_txt,
                         "pages": saved["pages"],
                         "outputDir": base_dir,
-                        "hasAnswer": False
+                        "hasAnswer": False,
+                        "folderName": safe_folder_name,
                     },
                     "finishedAt": _now_ms(),
                 },
@@ -1360,7 +1380,7 @@ def _update_job(job_id: str, patch: dict) -> None:
         job.update(patch)
 
 
-def _create_job(path: str, token: str | None = None, language: str = "zh") -> str:
+def _create_job(path: str, token: str | None = None, language: str = "ch") -> str:
     """创建一个基于路径/URL的 OCR 任务"""
     local_job_id = uuid.uuid4().hex
     is_folder = os.path.isdir(path)
@@ -1379,7 +1399,7 @@ def _create_job(path: str, token: str | None = None, language: str = "zh") -> st
     return local_job_id
 
 
-def _create_job_upload(filename: str, content: bytes, token: str | None = None, language: str = "zh") -> str:
+def _create_job_upload(filename: str, content: bytes, token: str | None = None, language: str = "ch") -> str:
     """创建一个基于上传二进制数据的 OCR 任务"""
     local_job_id = uuid.uuid4().hex
     with _jobs_lock:
@@ -1780,7 +1800,7 @@ class Handler(BaseHTTPRequestHandler):
                 if not token:
                     token = self.headers.get("X-PaddleOCR-Token") or None
                     
-                language = self.headers.get("X-Language", "zh")
+                language = self.headers.get("X-Language", "ch")
                 
                 job_id = _create_job_upload(filename, content, token, language)
                 self._send(200, _json_bytes({"jobId": job_id}))

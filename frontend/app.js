@@ -145,8 +145,8 @@ function openPreviewWindow() {
   try {
     const content = $("#output").value || "";
     console.log("Opening preview for content length:", content.length);
-    
-    const previewWin = window.open("", "_blank");
+
+    const previewWin = window.open(`${API_BASE}/preview.html`, "_blank");
     if (!previewWin) {
       alert("弹出窗口被拦截，请允许弹出窗口。");
       return;
@@ -173,294 +173,37 @@ function openPreviewWindow() {
     }
   }
 
-  // 将内容和数据传递给新窗口
-  previewWin.previewData = previewContent;
-  previewWin.sourcesData = sources; // 传递所有可用的 KaTeX 来源
+  const payload = {
+    type: "preview-data",
+    jobIdPath,
+    markdown: previewContent,
+  };
 
-  // 构造预览页面的 HTML
-  const html = `<!DOCTYPE html>
-<html lang="zh-CN">
-<head>
-  <meta charset="utf-8">
-  <title>预览结果 - PaddleDev</title>
-  <style>
-    html,body{height:100%}
-    body{
-      margin:0;height:100vh;width:100vw;background:#fff;color:#111;
-      font-family:system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;line-height:1.6
-    }
-    .splitRoot{display:grid;grid-template-columns:1fr 1fr;height:100vh;width:100vw}
-    .pane{overflow:auto;padding:16px;box-sizing:border-box;border-left:1px solid #eee}
-    .pane:first-child{border-left:none}
-    .contentWrap{white-space:pre-wrap;word-wrap:break-word;overflow-wrap:break-word;min-height:100%}
-    #originalPane img{
-      width:100%;
-      height:auto;
-      display:block;
-      margin:12px auto;
-      border-radius:4px;
-      box-shadow:0 2px 8px rgba(0,0,0,0.08);
-    }
-    .contentWrap img{
-      width:50%;
-      height:auto;
-      display:block;
-      margin:12px auto;
-      border-radius:4px;
-      box-shadow:0 2px 8px rgba(0,0,0,0.08);
-    }
-    /* KaTeX 样式微调，防止重叠 */
-    .katex-display {
-      overflow-x: auto;
-      overflow-y: hidden;
-      padding: 10px 0;
-    }
-    table {
-      border-collapse: collapse;
-      width: 100%;
-      margin: 1em 0;
-    }
-    th, td {
-      border: 1px solid #ddd;
-      padding: 8px;
-      text-align: left;
-    }
-    th { background-color: #f2f2f2; }
-    .pageSpacer{height:320px}
-  </style>
-</head>
-<body>
-  <div class="splitRoot">
-    <div class="pane" id="originalPane"></div>
-    <div class="pane"><div class="contentWrap" id="content"></div></div>
-  </div>
-  <div class="pageSpacer"></div>
-  <script>
-    (function() {
-      const contentEl = document.getElementById("content");
-      const originalEl = document.getElementById("originalPane");
-      contentEl.innerHTML = window.previewData || "";
-      
-      const sources = window.sourcesData || [];
-      const apiBase = ${JSON.stringify(API_BASE)};
-      const jobIdPath = ${JSON.stringify(jobIdPath)};
+  const origin = window.location.origin;
 
-      function loadCss(href) {
-        return new Promise((resolve, reject) => {
-          const link = document.createElement("link");
-          link.rel = "stylesheet";
-          link.href = href;
-          link.onload = resolve;
-          link.onerror = reject;
-          document.head.appendChild(link);
-        });
-      }
+  const onMessage = (ev) => {
+    if (ev.source !== previewWin) return;
+    if (!ev.data || typeof ev.data !== "object") return;
+    if (ev.data.type !== "preview-ready") return;
+    previewWin.postMessage(payload, origin);
+  };
 
-      function loadScript(src) {
-        return new Promise((resolve, reject) => {
-          const s = document.createElement("script");
-          s.src = src;
-          s.async = true;
-          s.onload = resolve;
-          s.onerror = reject;
-          document.body.appendChild(s);
-        });
-      }
+  window.addEventListener("message", onMessage);
 
-      function escapeHtml(s) {
-        return String(s)
-          .replace(/&/g, "&amp;")
-          .replace(/</g, "&lt;")
-          .replace(/>/g, "&gt;")
-          .replace(/"/g, "&quot;")
-          .replace(/'/g, "&#39;");
-      }
+  const timer = setInterval(() => {
+    try {
+      previewWin.postMessage(payload, origin);
+    } catch (e) {}
+  }, 400);
 
-      function mdToHtml(md) {
-        const lines = String(md || "").replace(/\\r\\n/g, "\\n").split("\\n");
-        const out = [];
-        let buf = [];
+  setTimeout(() => {
+    clearInterval(timer);
+  }, 5000);
 
-        const flushPara = () => {
-          if (!buf.length) return;
-          const text = buf.join(" ").trim();
-          if (!text) {
-            buf = [];
-            return;
-          }
-          out.push("<p>" + renderInline(text) + "</p>");
-          buf = [];
-        };
-
-        const renderInline = (text) => {
-          let t = escapeHtml(text);
-          t = t.replace(/!\\[([^\\]]*)\\]\\(([^)]+)\\)/g, (m, alt, src) => {
-            const a = escapeHtml(alt || "");
-            const u = escapeHtml(String(src || "").trim());
-            return "<img alt=\"" + a + "\" src=\"" + u + "\">";
-          });
-          t = t.replace(/\\[([^\\]]+)\\]\\(([^)]+)\\)/g, (m, label, href) => {
-            const l = escapeHtml(label || "");
-            const u = escapeHtml(String(href || "").trim());
-            return "<a href=\"" + u + "\" target=\"_blank\" rel=\"noopener noreferrer\">" + l + "</a>";
-          });
-          t = t.replace(/\\*\\*([^*]+)\\*\\*/g, "<strong>$1</strong>");
-          t = t.replace(/\\*([^*]+)\\*/g, "<em>$1</em>");
-          return t;
-        };
-
-        for (const rawLine of lines) {
-          const line = rawLine || "";
-          const mHeading = line.match(/^(#{1,6})\\s+(.*)$/);
-          if (mHeading) {
-            flushPara();
-            const level = mHeading[1].length;
-            out.push("<h" + level + ">" + renderInline(mHeading[2] || "") + "</h" + level + ">");
-            continue;
-          }
-
-          if (!line.trim()) {
-            flushPara();
-            continue;
-          }
-
-          buf.push(line.trim());
-        }
-        flushPara();
-        return out.join("\\n");
-      }
-
-      function fixImgUrls(rootEl) {
-        if (!rootEl) return;
-        const imgs = Array.from(rootEl.querySelectorAll("img"));
-        for (const img of imgs) {
-          const src = (img.getAttribute("src") || "").trim();
-          if (!src) continue;
-          if (src.startsWith("http") || src.startsWith("data:") || src.startsWith("blob:")) continue;
-          if (src.startsWith("output/imgs/")) {
-            if (jobIdPath) {
-              img.setAttribute("src", apiBase + "/output/" + jobIdPath + "/" + src);
-            }
-            continue;
-          }
-          if (src.startsWith("output/")) {
-            img.setAttribute("src", apiBase + "/" + src);
-          }
-        }
-      }
-
-      // 渲染左侧原始文件（优先使用合并PDF，否则使用原始PDF或图片）
-      async function renderOriginal() {
-        if (!jobIdPath) {
-          originalEl.textContent = "无原始文件";
-          return;
-        }
-        try {
-          const resp = await fetch(apiBase + "/api/history/assets?id=" + encodeURIComponent(jobIdPath));
-          const data = await resp.json();
-          const files = (data && data.files) || [];
-          if (!files.length) {
-            originalEl.textContent = "无原始文件";
-            return;
-          }
-          // 只选择 PDF（优先合并PDF；其次原始PDF）
-          const mergedPdf = files.find(f => f.type === "merged_pdf");
-          const pdf = files.find(f => f.type === "pdf");
-          const toShow = mergedPdf || pdf;
-          if (!toShow) {
-            originalEl.textContent = "无可预览 PDF（请确认任务目录中存在 merged.pdf 或原始 pdf）";
-            return;
-          }
-          if (toShow.type === "merged_pdf" || toShow.type === "pdf") {
-            const iframe = document.createElement("iframe");
-            iframe.src = apiBase + "/" + toShow.url;
-            iframe.style.width = "100%";
-            iframe.style.height = "100%";
-            iframe.style.minHeight = "100%";
-            iframe.style.border = "none";
-            originalEl.appendChild(iframe);
-          }
-        } catch (e) {
-          originalEl.textContent = "加载原始文件失败";
-        }
-      }
-
-      async function init() {
-        // 渲染左侧原始文件
-        renderOriginal();
-        contentEl.innerHTML = mdToHtml(window.previewData || "");
-        fixImgUrls(contentEl);
-
-        // 滚动边界处理：当两个面板都到达底/顶后，继续滚动将滚动整个页面
-        function canScroll(el, dy) {
-          if (!el) return false;
-          if (dy > 0) {
-            return el.scrollTop + el.clientHeight < el.scrollHeight - 1;
-          } else if (dy < 0) {
-            return el.scrollTop > 0;
-          }
-          return false;
-        }
-        const panes = Array.from(document.querySelectorAll(".pane"));
-        panes.forEach((el) => {
-          el.addEventListener(
-            "wheel",
-            (e) => {
-              const dy = e.deltaY;
-              if (canScroll(el, dy)) return; // 内部仍可滚动，保持默认
-              const othersAtEdge = panes
-                .filter((p) => p !== el)
-                .every((p) => !canScroll(p, dy));
-              if (othersAtEdge) {
-                e.preventDefault();
-                window.scrollBy({ top: dy, left: 0, behavior: "auto" });
-              }
-            },
-            { passive: false }
-          );
-        });
-
-        let loaded = false;
-        // 尝试按顺序加载各个 CDN 的 KaTeX
-        for (const s of sources) {
-          try {
-            await loadCss(s.css);
-            await loadScript(s.js);
-            await loadScript(s.render);
-            if (typeof renderMathInElement === "function") {
-              loaded = true;
-              break;
-            }
-          } catch (e) {
-            console.warn("Failed to load KaTeX from " + s.name);
-          }
-        }
-
-        if (loaded) {
-          // 渲染数学公式
-          renderMathInElement(contentEl, {
-            delimiters: [
-              { left: "$$", right: "$$", display: true },
-              { left: "\\\\[", right: "\\\\]", display: true },
-              { left: "$", right: "$", display: false },
-              { left: "\\\\(", right: "\\\\)", display: false },
-            ],
-            throwOnError: false,
-            strict: "ignore" // 忽略严格模式，允许非标准 LaTeX（如公式中的中文）
-          });
-        } else {
-          console.error("All KaTeX sources failed to load.");
-        }
-      }
-      
-      init();
-    })();
-  </script>
-</body>
-</html>`;
-
-    previewWin.document.write(html);
-    previewWin.document.close();
+  previewWin.addEventListener("beforeunload", () => {
+    clearInterval(timer);
+    window.removeEventListener("message", onMessage);
+  });
   } catch (err) {
     console.error("Preview error:", err);
     log("预览失败: " + err.message);

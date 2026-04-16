@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>MinerU 预览</title>
+  <link rel="stylesheet" href="./vendor/katex/katex.min.css">
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { height: 100%; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "SF Pro SC", "Helvetica Neue", sans-serif;
+      background: #f5f5f7;
+      color: #1d1d1f;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+    header {
+      background: rgba(255,255,255,0.9);
+      padding: 12px 24px;
+      border-bottom: 1px solid #e5e5e5;
+      font-weight: 600;
+      flex: 0 0 auto;
+    }
+    .container {
+      display: flex;
+      flex: 1;
+      overflow: hidden;
+    }
+    .panel {
+      flex: 1;
+      overflow: auto;
+      padding: 20px;
+    }
+    .left-panel {
+      border-right: 1px solid #e5e5e5;
+      background: #e8e8ed;
+      padding: 0;
+    }
+    .right-panel {
+      background: #ffffff;
+      line-height: 1.7;
+      font-size: 15px;
+      padding: 30px;
+    }
+    iframe {
+      width: 100%;
+      height: 100%;
+      border: none;
+    }
+    .md-content h1, .md-content h2, .md-content h3 { margin-top: 24px; margin-bottom: 12px; }
+    .md-content p { margin-bottom: 16px; }
+    .md-content img { max-width: 100%; height: auto; border-radius: 4px; margin: 10px 0; }
+    .md-content pre { background: #f5f5f7; padding: 16px; border-radius: 8px; overflow-x: auto; }
+    .md-content code { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; font-size: 0.9em; background: #f5f5f7; padding: 2px 4px; border-radius: 4px; }
+    .hint { color: #86868b; padding: 16px; }
+  </style>
+</head>
+<body>
+  <header>文档与解析结果对照预览</header>
+  <div class="container">
+    <div class="panel left-panel">
+      <div id="pdfHost" class="hint">等待加载…</div>
+    </div>
+    <div class="panel right-panel">
+      <div id="mdHost" class="md-content"></div>
+    </div>
+  </div>
+  <script src="./vendor/katex/katex.min.js"></script>
+  <script src="./vendor/katex/auto-render.min.js"></script>
+  <script src="./preview.js"></script>
+</body>
+</html>
